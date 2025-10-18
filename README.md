@@ -35,7 +35,6 @@ The script executes in a clear, logical sequence:
 
 ## ✅ Future Work & To-Do
 
-- [ ] Validate the end-cap thickness equation against a trusted source.
 - [ ] Add a more detailed model for `m_misc` and `m_plumbing` instead of using a single estimate.
 - [ ] Integrate a basic atmospheric model for a more accurate apogee prediction.
-- [ ] Investigate the "LN2 boil-off" pressurization concept proposed by Nick Hamilton.
+
