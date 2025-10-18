@@ -33,6 +33,7 @@ ox_density_kgm3   = 1141;       % [kg/m^3] Density of Liquid Oxygen
 fuel_density_kgm3 = 820;        % [kg/m^3] Density of Jet-A
 pressurant_temp_k = 294;        % [K] Temperature of pressurant gas in its tank
 pressurant_molar_mass_gmol = 28.0134; % [g/mol] Molar mass of Nitrogen (N2)
+p_storage_pressurant_pa =;      % [Pa] The pressure the Nitrogen is stored in dedicated tank (MEOP). TODO: Define this value
 
 % --- Vehicle Geometry & Materials ---
 % Assumption: Both LOX and Fuel tanks are cylinders of the same diameter
@@ -82,14 +83,16 @@ m_plumbing_kg =; % [kg] TODO: Estimate mass of valves and plumbing
 % Placeholder for summing up all masses
 
 
+
 % --- 2.4 - Performance Analysis ---
 % Placeholder for TWR, Delta-V, and Apogee calculations
+
 
 
 %% 3.0 - OUTPUTS
 % This section displays the final calculated values in a clean format.
 
-%% 4.0 Test Section
+%% 4.0 - Test Section
 
 % you can use this section temporarly to test that github works for you and the changes you make are actually working
 
