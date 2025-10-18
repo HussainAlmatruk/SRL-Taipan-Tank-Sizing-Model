@@ -30,7 +30,7 @@ The script is organized into sequential blocks for clear organization and mainta
 ## How to Use This Repository
 
 1. **Pull**: Before starting work, open GitHub Desktop and Pull the latest version to ensure you are up-to-date
-2. **Edit Inputs**: Open the `.m` file in MATLAB. Modify the variables in the `%% INPUTS` section as needed
+2. **Edit Inputs**: Open the `.m` file in MATLAB. Modify the variables in the `%% INPUTS` section as needed. currently this file is "tank sizing script.m"
 3. **Add Calculations**: Implement the necessary formulas in the `%% CALCULATIONS` section
 4. **Run & Analyze**: Execute the script and review the results
 5. **Commit & Push**: Save your changes, go to GitHub Desktop, Commit them with a clear message, and Push them to the repository
