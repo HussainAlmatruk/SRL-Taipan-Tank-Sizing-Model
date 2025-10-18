@@ -1,0 +1,47 @@
+# MATLAB
+# Ignore autosave files
+*.asv
+
+# Ignore generated MEX files
+*.mex*
+
+# Ignore generated p-code files
+*.p
+
+# Ignore generated figures
+*.fig
+
+# Ignore MATLAB crash dump files
+*.dmp
+
+# Ignore Simulink cache files
+*.slxc
+
+# Ignore other temporary files
+*.bak
+*.orig
+*.swo
+*.swp
+
+# Ignore build artifacts
+/build/
+/dist/
+*.mlappinstall
+*.mlpkginstall
+*.mltbx
+
+# Ignore user-specific files
+*.mat
+!/data/*.mat  # Example: Don't ignore .mat files in a 'data' folder
+*.m~
+*.slx~
+*.mdl~
+
+# Ignore project-specific files
+*.prj
+*.prj.user
+*.mlproj
+*.mlproject
+
+# Ignore MATLAB session files
+Matlab.mat
