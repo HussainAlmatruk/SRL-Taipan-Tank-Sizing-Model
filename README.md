@@ -14,7 +14,7 @@ The purpose of this model is to determine the optimal dimensions, materials, and
 
 Our approach is **"Calculate, Don't Assume."** The script is designed to derive as much information as possible from a small set of core inputs. For example, we input the engine's thrust and efficiency (`Isp`), and the code calculates the required propellant mass not the other way around. This ensures that our design choices are directly tied to performance requirements.
 
-# Rocket Sizing Script
+## Rocket Sizing Script
 
 A modular MATLAB script for rocket propulsion system sizing and performance calculations.
 
