@@ -74,8 +74,12 @@ m_plumbing_kg =; % [kg] TODO: Estimate mass of valves and plumbing
 % Placeholder for propellant mass calculations
 
 
+
+
 % --- 2.2 - Tank Sizing & Mass ---
 % Placeholder for LOX, Fuel, and Pressurant tank dimension, thickness, and mass calculations
+
+
 
 
 
@@ -84,13 +88,18 @@ m_plumbing_kg =; % [kg] TODO: Estimate mass of valves and plumbing
 
 
 
+
+
 % --- 2.4 - Performance Analysis ---
 % Placeholder for TWR, Delta-V, and Apogee calculations
 
 
 
+
+
 %% 3.0 - OUTPUTS
 % This section displays the final calculated values in a clean format.
+
 
 %% 4.0 - Test Section
 
