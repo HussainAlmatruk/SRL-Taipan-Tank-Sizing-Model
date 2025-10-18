@@ -1,4 +1,3 @@
-# SRL-Taipan-Tank-Sizing-Model
 # SRL Liquid Rocket - Tank Sizing and Mass Model
 
 **Authors:** Hussain Almatruk, Makai Clendening
@@ -33,7 +32,7 @@ The script executes in a clear, logical sequence:
 4.  **Analyze:** Review the summary printed in the command window.
 5.  **Commit & Push:** Save your changes, commit them with a clear message in GitHub Desktop, and push them to the repository.
 
-## ✅ Future Work & To-Do
+## Future Work & To-Do
 
 - [ ] Add a more detailed model for `m_misc` and `m_plumbing` instead of using a single estimate.
 - [ ] Integrate a basic atmospheric model for a more accurate apogee prediction.
