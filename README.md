@@ -1,6 +1,7 @@
 # SRL Liquid Rocket - Tank Sizing and Mass Model
 
 **Authors:** Hussain Almatruk
+
 **Last Updated:** October 17, 2025
 
 This repository contains the official MATLAB model for the design and analysis of the propellant and pressurant tank system for the Taipan rocket engine.
