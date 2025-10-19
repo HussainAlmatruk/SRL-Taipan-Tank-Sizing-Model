@@ -2,7 +2,7 @@
 
 **Authors:** Hussain Almatruk
 
-**Last Updated:** October 18, 2025
+**Last Updated:** October 19, 2025
 
 This repository contains the official MATLAB model for the design and analysis of the propellant and pressurant tank system for the Taipan rocket engine.
 
@@ -50,8 +50,8 @@ This might require having more inputs or outputs than the ones in the trade stud
 
 ### 2. Implement Core Calculations:
 - [x] Add formulas to section 2.1 to calculate propellant mass flow rates and total propellant mass
-- [ ] Add formulas to section 2.2 to calculate tank volumes, dimensions, wall thicknesses, and empty masses
-- [ ] Add formulas to section 2.3 to sum all component masses into a total vehicle mass
+- [x] Add formulas to section 2.2 to calculate tank volumes, dimensions, wall thicknesses, and empty masses
+- [x] Add formulas to section 2.3 to sum all component masses into a total vehicle mass
 - [ ] Add formulas to section 2.4 to calculate TWR and Delta-V
 
 ### 3. Create Formatted Outputs:
