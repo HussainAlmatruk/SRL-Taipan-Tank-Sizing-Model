@@ -73,8 +73,7 @@ m_plumbing_kg =; % [kg] TODO: Estimate mass of valves and plumbing
 l_airframe_max_m =; %[m] Maximum allowable vehicle length TODO: Define this value 
 
 %% 2.0 - CALCULATIONS
-% This section should not be modified unless equations are being updated.
-% It should only reference variables from the INPUTS and CONSTANTS sections.
+% This section should not be modified unless equations are being updated or the initial code is done and is now being itirated on to optimize values
 
 % --- 2.1 - Propellant & Flow Rate Analysis ---
 
