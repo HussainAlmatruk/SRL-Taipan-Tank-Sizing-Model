@@ -1,0 +1,268 @@
+%{
+---------------------------------------------------------------------------
+CU Sounding Rocket Lab - Liquid Propulsion Team
+Tank Sizing and Vehicle Mass Model
+
+Description:
+This script performs a trade study for the design of the propellant and
+pressurant tanks for the Taipan liquid rocket engine.
+
+Authors: Hussain Almatruk, Jonathan Forte
+Last Updated: 10/19/2025
+---------------------------------------------------------------------------
+%}
+
+%% 0.0 - SETUP
+% Clears workspace, command window, and closes all figures.
+clear; clc; close all;
+
+%% 0.1 - CONSTANTS
+g_earth_ms2         = 9.80665;       % [m/s^2] Standard gravitational acceleration
+R_universal_jmolk   = 8.3145;      % [J/(mol*K)] Universal gas constant
+
+%% 1.0 - INPUTS
+
+% --- Engine & Performance ---
+f_thrust_n      = 2891.34405; % [N] Engine thrust
+i_sp_s          = 298.9491987;% [s] Specific impulse
+t_burn_s        = 10;         % [s] Total burn time
+o_f_ratio       = 2.5;        % [~] Oxidizer-to-Fuel mass ratio
+m_dot_ox        = 0.70445567; % [kg/s] Oxidiser flow rate
+m_dot_fuel      = 0.28178227; % [kg/s] Fuel flow rate
+
+% --- Propellants & Pressurant ---
+ox_density_kgm3   = 1141;                           % [kg/m^3] Density of Liquid Oxygen
+fuel_density_kgm3 = 820;                            % [kg/m^3] Density of Jet-A
+pressurant_temp_k = 294;                            % [K] Temperature of pressurant gas in its tank
+pressurant_molar_mass_gmol = 28.0134;               % [g/mol] Molar mass of Nitrogen (N2)
+p_storage_pressurant_pa = 3000*6894.76;             % [Pa] The pressure the Nitrogen is stored in dedicated tank (MEOP). TODO: Define this value
+p_D = 880*6894.76;                                  % [Pa] Tank operation pressure
+residual_fraction = 0.1;                            % [~] Percentage of fuel left over in tank after burnout
+
+% --- Vehicle Geometry & Materials ---
+% Assumption: Both LOX and Fuel tanks are cylinders of the same diameter
+D = 5*2.54/100;                     % [m] Diameter of the propellant tanks
+d_ox_tank_m     = D;                % [m] Diameter of the LOX tank
+d_fuel_tank_m   = D;                % [m] Diameter of the Fuel tank
+
+
+% Material Properties for LOX Tank 
+material_density_ox_kgm3         = 2840; % [kg/m^3] TODO: Define this value
+material_allowable_stress_ox_pa  = 2.90*10^8; % [Pa] TODO: Define this value
+
+% Material Properties for Fuel Tank 
+material_density_fuel_kgm3       = 2840; % [kg/m^3] TODO: Define this value
+material_allowable_stress_fuel_pa= 2.90*10^8; % [Pa] TODO: Define this value
+
+% Material Properties for Pressurant Tank 
+material_density_liner_kgm3             = 2840;     % [kg/m^3] TODO: Define this value
+t_liner                                 = 0.003;    % [m] Thickness of COPV liner 
+material_density_pressurant_kgm3        = 1800;     % [kg/m^3] TODO: Define this value
+material_allowable_stress_pressurant_pa = 3.5*10^9; % [Pa] TODO: Define this value
+
+% --- Design Margins & Factors ---
+safety_factor   = 1.5;        % [~] Safety factor for pressure vessels
+% Joint efficiency can differ based on tank material and welding process
+joint_efficiency_ox_tank        = 0.8; % [~] TODO: Define this value 
+joint_efficiency_fuel_tank      = 0.8; % [~] TODO: Define this value 
+joint_efficiency_pressurant_tank= 1.0; % [~] TODO: Define this value 
+
+corrosion_allowance_m = 0.001;  % [m] Extra thickness for material degradation
+ullage_fraction       = 0.1;    % [~] Percent of empty volume in tanks (e.g., 0.1 for 10%)
+
+% --- Estimated Masses (Non-Calculated) ---
+m_misc_kg     = 30; % [kg] TODO: Estimate mass of payload, structure, fins, avionics, recovery
+m_plumbing_kg = 10; % [kg] TODO: Estimate mass of valves and plumbing
+
+%% 2.0 - CALCULATIONS
+% This section should not be modified unless equations are being updated.
+
+%% 2.1 - VEHICLE SIZING
+
+% Calculate mass of fuel and oxidizer required given engine burn rate
+m_fuel = m_dot_fuel*t_burn_s/(1-residual_fraction);     % [kg] Total mass of fuel at liftoff
+m_ox = o_f_ratio * m_fuel*(1-residual_fraction);        % [kg] Total mass of opxidizer at liftoff
+
+% Provide syms with variables to solve for
+syms m_total m_tank_fuel m_tank_ox m_tank_pressurant m_pressurant L_cyl_ox L_cyl_fuel t_tank_ox t_tank_fuel R_internal t_tank_pressurant V_tank_pressurant n_pressurant V_tank_ox V_tank_fuel
+% Define system of equations
+equations = ...
+    ... Calculate total vehicle mass at liftoff from component masses
+    [m_total == m_tank_ox + m_tank_fuel + m_ox + m_fuel + m_tank_pressurant + m_pressurant + m_plumbing_kg + m_misc_kg... 
+    ... Calculate mass of the oxidizer tank from volume of tank material and material density
+    m_tank_ox == material_density_ox_kgm3 * pi * ((D/2)^2-(D/2-t_tank_ox)^2)*L_cyl_ox + 4/3*pi*((D/2)^3-(D/2-t_tank_ox)^3)...
+    ... Calculate mass of the fuel tank from volume of tank material and material density
+    m_tank_fuel == material_density_fuel_kgm3 * pi * ((D/2)^2-(D/2-t_tank_fuel)^2)*L_cyl_ox + 4/3 * pi * ((D/2)^3-(D/2-t_tank_fuel)^3)...
+    ... Calculate mass of pressurant tank from volume of COPV overwrap and liner
+    m_tank_pressurant == 4/3 * pi * (material_density_liner_kgm3 * ((R_internal + t_liner)^3 - R_internal^3) + material_density_pressurant_kgm3 * ((R_internal + t_liner + t_tank_pressurant)^3 - (R_internal + t_liner)^3))...
+    ... Thickness of fuel and oxidizer tanks will be equal for the same operating pressure
+    t_tank_ox == t_tank_fuel ... 
+    ... Calculate thickness of fuel tank (and therefore oxidizer tank) walls
+    t_tank_fuel == safety_factor * p_D * D / (2*material_allowable_stress_fuel_pa * joint_efficiency_fuel_tank) + corrosion_allowance_m...
+    ... Calculate thickness of COPV pressurant tank overwrap
+    t_tank_pressurant == safety_factor * p_storage_pressurant_pa * (R_internal + t_liner) / (2*material_allowable_stress_pressurant_pa)...
+    ... Valculate volume of oxidizer tank from volume of oxidizer and the ullage fraction
+    V_tank_ox == (m_ox / material_density_ox_kgm3) / (1 - ullage_fraction)...
+    ... Valculate volume of fuel tank from volume of oxidizer and the ullage fraction
+    V_tank_fuel == (m_fuel / material_density_fuel_kgm3) / (1 - ullage_fraction)...
+    ... Calculate length of cylindrical section of oxidizer tank (should be careful so this doesn't come out negative)
+    L_cyl_ox == (V_tank_ox - 4/3 * pi * (D/2 - t_tank_ox)^3) / (pi * (D/2 - t_tank_ox)^2)...
+    ... Calculate length of cylindrical section of fuel tank (should be careful so this doesn't come out negative)
+    L_cyl_fuel == (V_tank_fuel - 4/3 * pi * (D/2 - t_tank_fuel)^3) / (pi * (D/2 - t_tank_fuel)^2)...
+    ... PV = nRT for empty propellant tanks
+    p_D * (V_tank_ox + V_tank_fuel + V_tank_pressurant) == n_pressurant * R_universal_jmolk * pressurant_temp_k...
+    ... PV = nRT for full propellant tanks
+    p_storage_pressurant_pa * (V_tank_pressurant + ullage_fraction*(V_tank_ox + V_tank_fuel)) == n_pressurant * R_universal_jmolk * pressurant_temp_k...
+    ... Calculate mass of pressurant from n and N2 molar mass
+    m_pressurant == n_pressurant * pressurant_molar_mass_gmol/1000 ...
+    ... Calculate internal radius of pressurant COPV
+    R_internal == (3 * V_tank_pressurant / (4 * pi))^(1/3)];
+
+% Solve for all variables
+S = solve(equations);
+
+% Save varaibles as doubles for ease of reading
+m_total = double(S.m_total);                        % [kg] Total mass of vehicle at liftoff
+m_tank_fuel = double(S.m_tank_fuel);                % [kg] Mass of empty fuel tank
+m_tank_ox = double(S.m_tank_ox);                    % [kg] Mass of empty oxidizer tank
+m_tank_pressurant = double(S.m_tank_pressurant);    % [kg] Mass of pressurant tank
+m_pressurant = double(S.m_pressurant);              % [kg] Mass of pressurant
+L_cyl_ox = double(S.L_cyl_ox);                      % [m] Length of cylindrical section of oxidizer tank
+L_cyl_fuel = double(S.L_cyl_fuel);                  % [m] Length of cylindrical section of fuel tank
+t_tank_ox = double(S.t_tank_ox);                    % [m] Thickness of oxidizer tank walls
+t_tank_fuel = double(S.t_tank_fuel);                % [m] Thickness of fuel tank walls
+R_internal = double(S.R_internal);                  % [m] Internal radius of pressurant COPV
+t_tank_pressurant = double(S.t_tank_pressurant);    % [m] Thickness of pressurant tank overwrap
+V_tank_pressurant = double(S.V_tank_pressurant);    % [m^3] Volume of pressurant tank
+n_pressurant = double(S.n_pressurant);              % [~] Number of moles of pressurant
+V_tank_ox = double(S.V_tank_ox);                    % [m^3] Volume of oxdidizer tank
+V_tank_fuel = double(S.V_tank_fuel);                % [m^3] Volume of fuel tank
+
+D_pressurant = (S.R_internal + t_liner + S.t_tank_pressurant)*2*100/2.54;   % [in] Outer diameter of pressurant COPV (should be less than D)
+
+if D_pressurant > D*100/2.54
+    warning('Outer diameter of pressurant COPV exceeds maximum allowed diameter D. COPV converted to cylinder.');
+end
+
+if S.L_cyl_ox < 0 || S.L_cyl_fuel < 0
+    warning('Propellant cylinder length is too short.');
+end
+
+% If the diameter of the pressurant tank is too big, redo the calc with a cylindrical tank
+if D_pressurant > D*100/2.54
+    syms m_total m_tank_fuel m_tank_ox m_tank_pressurant m_pressurant L_cyl_ox L_cyl_fuel t_tank_ox t_tank_fuel L_cyl_pressurant t_tank_pressurant V_tank_pressurant n_pressurant V_tank_ox V_tank_fuel
+    % Define system of equations
+    equations = ...
+    ... Calculate total vehicle mass at liftoff from component masses
+    [m_total == m_tank_ox + m_tank_fuel + m_ox + m_fuel + m_tank_pressurant + m_pressurant + m_plumbing_kg + m_misc_kg... 
+    ... Calculate mass of the oxidizer tank from volume of tank material and material density
+    m_tank_ox == material_density_ox_kgm3 * pi * ((D/2)^2-(D/2-t_tank_ox)^2)*L_cyl_ox + 4/3*pi*((D/2)^3-(D/2-t_tank_ox)^3)...
+    ... Calculate mass of the fuel tank from volume of tank material and material density
+    m_tank_fuel == material_density_fuel_kgm3 * pi * ((D/2)^2-(D/2-t_tank_fuel)^2)*L_cyl_ox + 4/3 * pi * ((D/2)^3-(D/2-t_tank_fuel)^3)...
+    ... Calculate mass of pressurant tank from volume of COPV overwrap and liner
+    m_tank_pressurant == 4*pi/3*(material_density_pressurant_kgm3 * ((D/2)^3 - (D/2 - t_tank_pressurant)^3) + material_density_liner_kgm3 * ((D/2 - t_tank_pressurant)^3 - (D/2 - t_tank_pressurant - t_liner)^3)) + pi*(material_density_pressurant_kgm3*((D/2)^2 - (D/2 - t_tank_pressurant)^2) + material_density_liner_kgm3*((D/2 - t_tank_pressurant)^2 - (D/2 - t_tank_pressurant - t_liner)^2)) * L_cyl_pressurant...
+    ... Thickness of fuel and oxidizer tanks will be equal for the same operating pressure
+    t_tank_ox == t_tank_fuel ... 
+    ... Calculate thickness of fuel tank (and therefore oxidizer tank) walls
+    t_tank_fuel == safety_factor * p_D * D / (2*material_allowable_stress_fuel_pa * joint_efficiency_fuel_tank) + corrosion_allowance_m...
+    ... Calculate thickness of COPV pressurant tank overwrap
+    t_tank_pressurant == safety_factor * p_storage_pressurant_pa * D / (2*material_allowable_stress_pressurant_pa)...
+    ... Valculate volume of oxidizer tank from volume of oxidizer and the ullage fraction
+    V_tank_ox == (m_ox / material_density_ox_kgm3) / (1 - ullage_fraction)...
+    ... Valculate volume of fuel tank from volume of oxidizer and the ullage fraction
+    V_tank_fuel == (m_fuel / material_density_fuel_kgm3) / (1 - ullage_fraction)...
+    ... Calculate length of cylindrical section of oxidizer tank (should be careful so this doesn't come out negative)
+    L_cyl_ox == (V_tank_ox - 4/3 * pi * (D/2 - t_tank_ox)^3) / (pi * (D/2 - t_tank_ox)^2)...
+    ... Calculate length of cylindrical section of fuel tank (should be careful so this doesn't come out negative)
+    L_cyl_fuel == (V_tank_fuel - 4/3 * pi * (D/2 - t_tank_fuel)^3) / (pi * (D/2 - t_tank_fuel)^2)...
+    ... PV = nRT for empty propellant tanks
+    p_D * (V_tank_ox + V_tank_fuel + V_tank_pressurant) == n_pressurant * R_universal_jmolk * pressurant_temp_k...
+    ... PV = nRT for full propellant tanks
+    p_storage_pressurant_pa * (V_tank_pressurant + ullage_fraction*(V_tank_ox + V_tank_fuel)) == n_pressurant * R_universal_jmolk * pressurant_temp_k...
+    ... Calculate mass of pressurant from n and N2 molar mass
+    m_pressurant == n_pressurant * pressurant_molar_mass_gmol/1000 ...
+    ... Calculate length of cylindrical portion of pressurant COPV
+    L_cyl_pressurant == (V_tank_pressurant - 4*pi/3*(D/2 - t_tank_pressurant - t_liner)^3)/(pi * (D/2 - t_tank_pressurant - t_liner)^2)];
+    % Solve for all variables
+    S = solve(equations);
+    % Save varaibles as doubles for ease of reading
+    m_total = double(S.m_total);                        % [kg] Total mass of vehicle at liftoff
+    m_tank_fuel = double(S.m_tank_fuel);                % [kg] Mass of empty fuel tank
+    m_tank_ox = double(S.m_tank_ox);                    % [kg] Mass of empty oxidizer tank
+    m_tank_pressurant = double(S.m_tank_pressurant);    % [kg] Mass of pressurant tank
+    m_pressurant = double(S.m_pressurant);              % [kg] Mass of pressurant
+    L_cyl_ox = double(S.L_cyl_ox);                      % [m] Length of cylindrical section of oxidizer tank
+    L_cyl_fuel = double(S.L_cyl_fuel);                  % [m] Length of cylindrical section of fuel tank
+    t_tank_ox = double(S.t_tank_ox);                    % [m] Thickness of oxidizer tank walls
+    t_tank_fuel = double(S.t_tank_fuel);                % [m] Thickness of fuel tank walls
+    L_cyl_pressurant = double(S.L_cyl_pressurant);      % [m] Length of cylindrical section of pressurant COPV
+    t_tank_pressurant = double(S.t_tank_pressurant);    % [m] Thickness of pressurant tank overwrap
+    V_tank_pressurant = double(S.V_tank_pressurant);    % [m^3] Volume of pressurant tank
+    n_pressurant = double(S.n_pressurant);              % [~] Number of moles of pressurant
+    V_tank_ox = double(S.V_tank_ox);                    % [m^3] Volume of oxdidizer tank
+    V_tank_fuel = double(S.V_tank_fuel);                % [m^3] Volume of fuel tank
+end
+
+dV = i_sp_s * g_earth_ms2 * log(m_total/((m_total-(1-residual_fraction)*(m_fuel + m_ox))));     % Calculate total delta-V of vehicle
+
+%% 2.2 - 1D MAXIMUM ALTITUDE ESTIMATION
+t = 0:0.001:120;                 % [s] Time interval and step to analyze
+altitude = zeros(size(t));      % [m] Pre-allocate altitude array
+velocity = zeros(size(t));      % [m/s] Pre-allocate velocity array
+acceleration = zeros(size(t));  % [m/s^2] Pre-allocate acceleration array
+thrust = zeros(size(t)); thrust(t<=t_burn_s) = f_thrust_n;  % [N] Make thrust array (should be zero after burnout)
+m_total_sim = m_total - (m_dot_ox + m_dot_fuel) .* t .* (thrust>0); m_total_sim(t>t_burn_s) = m_total - (m_dot_ox + m_dot_fuel) * t_burn_s; % [kg] Array of vehicle total mass over time
+dt = t(2) - t(1);   % [s] time step
+C_D = .5;           % [~] Vehicle drag coefficient
+A = pi * (D/2)^2;   % [m^2] Vehicle cross-sectional area
+
+% Step through time to calculate altitue, velocity, and acceleration through time
+for i = 2:max(size(t))
+velocity(i) = velocity(i-1) + acceleration(i-1) * dt;
+altitude(i) = altitude(i-1) + velocity(i-1) * dt;
+[~,~,~,rho,~,~] = atmosisa(altitude(i));
+acceleration(i) = (thrust(i) - 0.5 * rho * C_D * A * velocity(i) * abs(velocity(i))) / m_total_sim(i) - g_earth_ms2;
+% end the simulation if the rocket reaches the ground
+if altitude(i) < 0
+    break
+end
+end
+
+endofflight = find(altitude(10:end)==0,1,'first'); % find time step when flight ends
+
+%% 3.0 - OUTPUTS
+% This section displays the final calculated values in a clean format.
+
+%% 3.1 - VEHICLE PARAMETERS
+
+
+
+%% 3.2 - SIMULATION RESULTS
+tiledlayout(2,2)
+
+nexttile
+plot(t(1:endofflight),altitude(1:endofflight)/0.3048);
+grid on
+ylabel('Altitude [ft]')
+xlabel('Time [s]')
+title('Altitude vs. Time')
+
+nexttile
+plot(t(1:endofflight),velocity(1:endofflight));
+grid on
+ylabel('Velocity [m/s]')
+xlabel('Time [s]')
+title('Velocity vs. Time')
+
+nexttile
+plot(t(1:endofflight),acceleration(1:endofflight)./g_earth_ms2);
+grid on
+ylabel('Acceleration [g]')
+xlabel('Time [s]')
+title('Acceleration vs. Time')
+
+parameter = {'Vehicle Diameter [in]'; 'Burn Time [s]'; 'Maximum Altitude [ft]'; 'Maximum Velocity [m/s]'; 'Maximum Acceleration [g]'};
+value = [D*100/2.54; t_burn_s; max(altitude)/0.3048; max(velocity); max(acceleration./g_earth_ms2)];
+T = table(value, 'RowNames',parameter);
+
+uitable("Data",T{:,:},'RowName',T.Properties.RowNames,'ColumnName', {'Value'},'Units', 'Normalized', 'Position',[0.6, 0.2, 0.3, 0.212]);
