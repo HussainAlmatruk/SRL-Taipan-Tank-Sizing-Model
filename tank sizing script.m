@@ -36,6 +36,8 @@ pressurant_molar_mass_kgmol = 0.0280134; % [kg/mol] Molar mass of Nitrogen (N2)
 p_storage_pressurant_pa =;      % [Pa] The pressure the Nitrogen is stored in dedicated tank (MEOP). TODO: Define this value
 p_op_ox_tank_pa =; % [Pa] Operating pressure of LOX tank TODO: Define this value
 p_op_fuel_tank_pa =; % [Pa] Operating pressure of Fuel tank TODO: Define this value
+ox_temp_k         = ;       % [K] Temperature of LOX in tank TODO: Define this value
+fuel_temp_k       = 294;         % [K] Temperature of Jet-A in tank (Ambient probably)
 
 % --- 1.3 Vehicle Geometry & Materials ---
 % Assumption: Both LOX and Fuel tanks are cylinders of the same diameter
