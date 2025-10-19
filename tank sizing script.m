@@ -23,10 +23,10 @@ r_universal_jmolk   = 8.3145;      % [J/(mol*K)] Universal gas constant
 %% 1.0 - INPUTS
 
 % --- Engine & Performance ---
-f_thrust_n      = 2891.34405; % [N] Engine thrust
-i_sp_s          = 298.9491987;% [s] Specific impulse
-t_burn_s        = 10;         % [s] Total burn time
-o_f_ratio       = 2.5;        % [unitless] Oxidizer-to-Fuel mass ratio
+f_thrust_n      = 2891.34405;  % [N] Engine thrust
+i_sp_s          = 298.9491987; % [s] Specific impulse
+t_burn_s        = 10;          % [s] Total burn time
+o_f_ratio       = 2.5;         % [unitless] Oxidizer-to-Fuel mass ratio
 
 % --- Propellants & Pressurant ---
 ox_density_kgm3   = 1141;       % [kg/m^3] Density of Liquid Oxygen
@@ -34,6 +34,8 @@ fuel_density_kgm3 = 820;        % [kg/m^3] Density of Jet-A
 pressurant_temp_k = 294;        % [K] Temperature of pressurant gas in its tank
 pressurant_molar_mass_gmol = 28.0134; % [g/mol] Molar mass of Nitrogen (N2)
 p_storage_pressurant_pa =;      % [Pa] The pressure the Nitrogen is stored in dedicated tank (MEOP). TODO: Define this value
+p_op_ox_tank_pa =; % [Pa] Operating pressure of LOX tank
+p_op_fuel_tank_pa =; % [Pa] Operating pressure of Fuel tank
 
 % --- Vehicle Geometry & Materials ---
 % Assumption: Both LOX and Fuel tanks are cylinders of the same diameter
@@ -66,21 +68,56 @@ ullage_fraction       = 0.1;    % [unitless] Percent of empty volume in tanks (e
 m_misc_kg     =; % [kg] TODO: Estimate mass of payload, structure, fins, avionics, recovery
 m_plumbing_kg =; % [kg] TODO: Estimate mass of valves and plumbing
 
+% --- Design Constraints ---
+
+l_airframe_max_m =; %[m] Maximum allowable vehicle length TODO: Define this value 
+
 %% 2.0 - CALCULATIONS
 % This section should not be modified unless equations are being updated.
 % It should only reference variables from the INPUTS and CONSTANTS sections.
 
 % --- 2.1 - Propellant & Flow Rate Analysis ---
-% Placeholder for propellant mass calculations
 
+% Calculate Prop Mass Flow Rates
 
+m_dot_total_kgs = f_thrust_n/(i_sp_s*g_earth_ms2);          % [kg/s] Total propellant mass flow rate
+m_dot_ox_kgs = m_dot_total_kgs*(o_f_ratio/(1+o_f_ratio));   % [kg/s] Oxidizer mass flow rate 
+m_dot_fuel_kgs = m_dot_total_kgs/(1+o_f_ratio);             % [kg/s] Fuel mass flow rate 
 
+% Calculate Prop Masses
+
+m_ox_kg = m_dot_ox_kgs*t_burn_s;        % [kg] Total mass of oxidizer
+m_fuel_kg = m_dot_fuel_kgs *t_burn_s;   % [kg] Total mass of fuel
 
 % --- 2.2 - Tank Sizing & Mass ---
 % Placeholder for LOX, Fuel, and Pressurant tank dimension, thickness, and mass calculations
 
+% Calculate Volume of Props
 
+v_ox_m3 = m_ox_kg/ox_density_kgm3;          % [m^3] Volume of liquid oxidizer
+v_fuel_m3 = m_fuel_kg/fuel_density_kgm3;    % [m^3] Volume of liquid fuel
 
+% Calculate Internal Volume of Prop Tanks (Volume of prop in addition to ullage)
+
+v_total_ox_tank_m3 = v_ox_m3/(1-ullage_fraction);       % [m^3] Total internal volume of LOX tank
+v_total_fuel_tank_m3 = v_fuel_m3/(1-ullage_fraction);   % [m^3] Total internal volume of Fuel tank
+
+% Calculate tank radii
+
+r_ox_tank_m = d_ox_tank_m/2;     % [m] Radius of cylindrical ox tank
+r_fuel_tank_m = d_fuel_tank_m/2; % [m] Radius of cylindrical fuel tank
+
+% Calculate end cap volumes
+
+% Calculate cylindrical section lengths
+
+% Calculate tank design pressures
+
+% Calculate cylinder wall thicknesses
+
+% Calculate end cap wall thickness
+
+% Calculate empty tank mass
 
 
 % --- 2.3 - Vehicle Mass Buildup ---
