@@ -32,10 +32,10 @@ o_f_ratio       = 2.5;         % [unitless] Oxidizer-to-Fuel mass ratio
 ox_density_kgm3   = 1141;       % [kg/m^3] Density of Liquid Oxygen
 fuel_density_kgm3 = 820;        % [kg/m^3] Density of Jet-A
 pressurant_temp_k = 294;        % [K] Temperature of pressurant gas in its tank
-pressurant_molar_mass_gmol = 28.0134; % [g/mol] Molar mass of Nitrogen (N2)
+pressurant_molar_mass_kgmol = 0.0280134; % [kg/mol] Molar mass of Nitrogen (N2)
 p_storage_pressurant_pa =;      % [Pa] The pressure the Nitrogen is stored in dedicated tank (MEOP). TODO: Define this value
-p_op_ox_tank_pa =; % [Pa] Operating pressure of LOX tank
-p_op_fuel_tank_pa =; % [Pa] Operating pressure of Fuel tank
+p_op_ox_tank_pa =; % [Pa] Operating pressure of LOX tank TODO: Define this value
+p_op_fuel_tank_pa =; % [Pa] Operating pressure of Fuel tank TODO: Define this value
 
 % --- 1.3 Vehicle Geometry & Materials ---
 % Assumption: Both LOX and Fuel tanks are cylinders of the same diameter
@@ -87,7 +87,6 @@ m_ox_kg = m_dot_ox_kgs*t_burn_s;        % [kg] Total mass of oxidizer
 m_fuel_kg = m_dot_fuel_kgs *t_burn_s;   % [kg] Total mass of fuel
 
 % --- 2.2 - Tank Sizing & Mass ---
-% Placeholder for LOX, Fuel, and Pressurant tank dimension, thickness, and mass calculations
 
 % Calculate Volume of Props (Eq. 5)
 v_ox_m3 = m_ox_kg/ox_density_kgm3;          % [m^3] Volume of liquid oxidizer
@@ -129,14 +128,41 @@ t_caps_fuel_m = (p_design_fuel_pa * d_fuel_tank_m) / (4 * material_allowable_str
 m_empty_ox_tank_kg = material_density_ox_kgm3 * (pi * d_ox_tank_m * l_cyl_ox_m * t_cyl_ox_m + pi * d_ox_tank_m^2 * t_caps_ox_m); % [kg] Mass of the empty LOX tank
 m_empty_fuel_tank_kg = material_density_fuel_kgm3 * (pi * d_fuel_tank_m * l_cyl_fuel_m * t_cyl_fuel_m + pi * d_fuel_tank_m^2 * t_caps_fuel_m); % [kg] Mass of the empty Fuel tank
 
-% --- 2.3 - Vehicle Mass Buildup ---
+% --- 2.3 - Pressurant System Sizing --- 
+
+% Calculate moles of pressurant required to displace propellants (Eq. 14, Ideal Gas Law)
+% Assumes pressurant gas cools to its storage temperature in the propellant tanks
+n_ox_mol = (p_op_ox_tank_pa * v_ox_m3) / (r_universal_jmolk * pressurant_temp_k);       % [mol] Moles of gas to displace oxidizer
+n_fuel_mol = (p_op_fuel_tank_pa * v_fuel_m3) / (r_universal_jmolk * pressurant_temp_k); % [mol] Moles of gas to displace fuel
+
+% Calculate total moles of pressurant (Eq. 15)
+n_total_mol = n_ox_mol + n_fuel_mol; % [mol] Total moles of pressurant gas needed
+
+% Calculate total mass of pressurant gas (Eq. 16)
+m_pressurant_gas_kg = n_total_mol * (pressurant_molar_mass_kgmol); % [kg] Total Mass of pressurant gas needed
+
+% Calculate internal volume of pressurant storage tank (Eq. 17)
+v_pressurant_tank_internal_m3 = (n_total_mol * r_universal_jmolk * pressurant_temp_k) / p_storage_pressurant_pa; % [m^3] Internal volume of the high-pressure storage tank
+
+% Calculate internal radius of spherical pressurant tank (Eq. 18)
+r_pressurant_tank_internal_m = ((3 * v_pressurant_tank_internal_m3) / (4 * pi))^(1/3); % [m] Internal radius of the pressurant tank
+
+% Calculate wall thickness of spherical pressurant tank (Eq. 19)
+p_design_pressurant_pa = p_storage_pressurant_pa * safety_factor; % [Pa] Design pressure for pressurant tank
+t_pressurant_tank_m = (p_design_pressurant_pa * r_pressurant_tank_internal_m) / (2 * material_allowable_stress_pressurant_pa * joint_efficiency_pressurant_tank) + corrosion_allowance_m; % [m] Wall thickness of pressurant tank
+
+% Calculate mass of empty pressurant tank (Eq. 20)
+v_shell_pressurant_m3 = (4/3) * pi * ((r_pressurant_tank_internal_m + t_pressurant_tank_m)^3 - r_pressurant_tank_internal_m^3); % [m^3] Volume of the tank material
+m_empty_pressurant_tank_kg = material_density_pressurant_kgm3 * v_shell_pressurant_m3; % [kg] Mass of the empty pressurant tank
+
+% --- 2.4 - Vehicle Mass Buildup ---
 % Placeholder for summing up all masses
 
 
 
 
 
-% --- 2.4 - Performance Analysis ---
+% --- 2.5 - Performance Analysis ---
 % Placeholder for TWR, Delta-V, and Apogee calculations
 
 
