@@ -54,7 +54,10 @@ This might require having more inputs or outputs than the ones in the trade stud
 - [x] Add formulas to section 2.3 to sum all component masses into a total vehicle mass
 - [ ] Add formulas to section 2.4 to calculate TWR and Delta-V
 
-### 3. Create Formatted Outputs:
+### 3. Validation and Error Checks:
+- [ ]checks must be implemented after the CALCULATIONS block and before the OUTPUTS block
+
+### 4. Create Formatted Outputs:
 - [ ] Add `fprintf` statements to the OUTPUTS section to display the results clearly
 
 ---------------------------------------------------------
