@@ -56,7 +56,7 @@ This might require having more inputs or outputs than the ones in the trade stud
 - [ ] Add formulas to section 2.5 to calculate TWR and Delta-V
 
 ### 3. Validation and Error Checks:
-- [ ]checks must be implemented after the CALCULATIONS block and before the OUTPUTS block
+- [ ] checks must be implemented after the CALCULATIONS block and before the OUTPUTS block
 
 ### 4. Create Formatted Outputs:
 - [ ] Add `fprintf` statements to the OUTPUTS section to display the results clearly
