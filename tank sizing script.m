@@ -31,13 +31,13 @@ o_f_ratio       = 2.5;         % [unitless] Oxidizer-to-Fuel mass ratio
 % --- 1.2 Propellants & Pressurant ---
 ox_density_kgm3   = 1141;       % [kg/m^3] Density of Liquid Oxygen
 fuel_density_kgm3 = 820;        % [kg/m^3] Density of Jet-A
-pressurant_temp_k = 294;        % [K] Temperature of pressurant gas in its tank
 pressurant_molar_mass_kgmol = 0.0280134; % [kg/mol] Molar mass of Nitrogen (N2)
-p_storage_pressurant_pa =;      % [Pa] The pressure the Nitrogen is stored in dedicated tank (MEOP). TODO: Define this value
 p_op_ox_tank_pa =; % [Pa] Operating pressure of LOX tank TODO: Define this value
 p_op_fuel_tank_pa =; % [Pa] Operating pressure of Fuel tank TODO: Define this value
+p_storage_pressurant_pa =;      % [Pa] The pressure the Nitrogen is stored in dedicated tank (MEOP). TODO: Define this value
 ox_temp_k         = ;       % [K] Temperature of LOX in tank TODO: Define this value
 fuel_temp_k       = 294;         % [K] Temperature of Jet-A in tank (Ambient probably)
+pressurant_temp_k = 294;        % [K] Temperature of pressurant gas in its tank
 
 % --- 1.3 Vehicle Geometry & Materials ---
 % Assumption: Both LOX and Fuel tanks are cylinders of the same diameter
@@ -134,8 +134,8 @@ m_empty_fuel_tank_kg = material_density_fuel_kgm3 * (pi * d_fuel_tank_m * l_cyl_
 
 % Calculate moles of pressurant required to displace propellants (Eq. 14, Ideal Gas Law)
 % Assumes pressurant gas cools to its storage temperature in the propellant tanks
-n_ox_mol = (p_op_ox_tank_pa * v_ox_m3) / (r_universal_jmolk * pressurant_temp_k);       % [mol] Moles of gas to displace oxidizer
-n_fuel_mol = (p_op_fuel_tank_pa * v_fuel_m3) / (r_universal_jmolk * pressurant_temp_k); % [mol] Moles of gas to displace fuel
+n_ox_mol = (p_op_ox_tank_pa * v_ox_m3) / (r_universal_jmolk * ox_temp_k);       % [mol] Moles of gas to displace oxidizer
+n_fuel_mol = (p_op_fuel_tank_pa * v_fuel_m3) / (r_universal_jmolk * fuel_temp_k); % [mol] Moles of gas to displace fuel
 
 % Calculate total moles of pressurant (Eq. 15)
 n_total_mol = n_ox_mol + n_fuel_mol; % [mol] Total moles of pressurant gas needed
