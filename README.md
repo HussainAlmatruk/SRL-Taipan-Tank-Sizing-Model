@@ -6,6 +6,8 @@
 
 This repository contains the official MATLAB model for the design and analysis of the propellant and pressurant tank system for the Taipan rocket engine.
 
+Official Project's Document (Overleaf): https://www.overleaf.com/read/jwzdsjwwgnff#6aaf7d
+
 ## Project Purpose
 
 The purpose of this model is to determine the optimal dimensions, materials, and mass of our LOX, Jet-A, and Nitrogen pressurant tanks. It takes fundamental engine and vehicle parameters as inputs and calculates a full vehicle mass budget and key performance metrics.
