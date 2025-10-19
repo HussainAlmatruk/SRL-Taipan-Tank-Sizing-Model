@@ -6,6 +6,8 @@
 
 This repository contains the official MATLAB model for the design and analysis of the propellant and pressurant tank system for the Taipan rocket engine.
 
+Official Project's Document (Overleaf): https://www.overleaf.com/read/jwzdsjwwgnff#6aaf7d
+
 ## Project Purpose
 
 The purpose of this model is to determine the optimal dimensions, materials, and mass of our LOX, Jet-A, and Nitrogen pressurant tanks. It takes fundamental engine and vehicle parameters as inputs and calculates a full vehicle mass budget and key performance metrics.
@@ -47,7 +49,7 @@ This might require having more inputs or outputs than the ones in the trade stud
 - [ ] Create initial estimates for `m_misc_kg` and `m_plumbing_kg`
 
 ### 2. Implement Core Calculations:
-- [ ] Add formulas to section 2.1 to calculate propellant mass flow rates and total propellant mass
+- [x] Add formulas to section 2.1 to calculate propellant mass flow rates and total propellant mass
 - [ ] Add formulas to section 2.2 to calculate tank volumes, dimensions, wall thicknesses, and empty masses
 - [ ] Add formulas to section 2.3 to sum all component masses into a total vehicle mass
 - [ ] Add formulas to section 2.4 to calculate TWR and Delta-V
