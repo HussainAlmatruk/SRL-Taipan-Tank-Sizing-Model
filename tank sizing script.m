@@ -7,8 +7,8 @@ Description:
 This script performs a trade study for the design of the propellant and
 pressurant tanks for the Taipan liquid rocket engine.
 
-Authors: Hussain Almatruk
-Last Updated: 10/19/2025
+Authors: Hussain Almatruk, Jonathan Forte
+Last Updated: 10/21/2025
 ---------------------------------------------------------------------------
 %}
 
@@ -158,21 +158,27 @@ v_shell_pressurant_m3 = (4/3) * pi * ((r_pressurant_tank_internal_m + t_pressura
 m_empty_pressurant_tank_kg = material_density_pressurant_kgm3 * v_shell_pressurant_m3; % [kg] Mass of the empty pressurant tank
 
 % --- 2.4 - Vehicle Mass Buildup ---
-% Placeholder for summing up all masses
-
-
-
-
+m_total_kg = m_empty_ox_tank_kg + m_empty_fuel_tank_kg + m_ox_kg + m_fuel_kg + m_empty_pressurant_tank_kg + m_pressurant_gas_kg + m_plumbing_kg + m_misc_kg; % [kg] Total vehicle liftoff mass
+m_final_kg = m_empty_ox_tank_kg + m_empty_fuel_tank_kg + m_empty_pressurant_tank_kg + m_plumbing_kg + m_misc_kg; % [kg] Final mass after propellant is consumed
 
 % --- 2.5 - Performance Analysis ---
-% Placeholder for TWR, Delta-V, and Apogee calculations
 
+twr_ratio = (f_thrust_n / m_total_kg) / g_earth_ms2; % [unitless] Thrust-to-Weight ratio unitless
+delta_v_ms = i_sp_s*g_earth_ms2*ln(m_total_kg/(m_final_kg-(m_ox_kg-m_fuel_kg))); % [m/s] Ideal change in velocity
+h_max_m = (delta_v_ms^2) / (2*g_earth_ms2); % [m] Estimated ballistic apogee
+
+% --- 2.6 - Validation and Error Checks ---
 
 
 
 
 %% 3.0 - OUTPUTS
 % This section displays the final calculated values in a clean format.
+
+fprintf('Mass Total =' , num2str(m_total_kg)) %
+fprintf('Thrust To Weight Ratio = ', num2str(twr_ratio)); %
+fprintf('Ideal Delta V', num2str(delta_v_ms); %
+fprintf(h_max_m); %
 
 
 %% 4.0 - Test Section
