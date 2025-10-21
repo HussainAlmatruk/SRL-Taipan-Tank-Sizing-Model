@@ -190,6 +190,11 @@ m_total = m_empty_ox_tank_kg + m_empty_fuel_tank_kg + m_ox_kg + m_fuel_kg + m_em
 % Placeholder for TWR, Delta-V, and Apogee calculations
 
 TWR = (f_thrust_n / m_total) / g_earth_ms2;
+
+if TWR < 5
+    warning('Liftoff TWR is less than 5')
+end
+
 dV = i_sp_s * g_earth_ms2 * log(m_total/((m_total-(1-residual_fraction)*(m_ox_kg + m_fuel_kg))));
 
 t = 0:0.001:120;                % [s] Time interval and step to analyze
@@ -252,5 +257,6 @@ T = table(value, 'RowNames',parameter);
 uitable("Data",T{:,:},'RowName',T.Properties.RowNames,'ColumnName', {'Value'},'Units', 'Normalized', 'Position',[0.6, 0.2, 0.3, 0.212]);
 
 %% 4.0 - Test Section
+
 
 % you can use this section temporarly to test that github works for you and the changes you make are actually working
