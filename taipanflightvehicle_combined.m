@@ -8,7 +8,7 @@ This script performs a trade study for the design of the propellant and
 pressurant tanks for the Taipan liquid rocket engine.
 
 Authors: Hussain Almatruk, Jonathan Forte
-Last Updated: 10/19/2025
+Last Updated: 10/21/2025
 ---------------------------------------------------------------------------
 %}
 
@@ -42,9 +42,10 @@ residual_fraction = 0.1;                    % [~] Percentage of fuel left over i
 
 % --- 1.3 Vehicle Geometry & Materials ---
 % Assumption: Both LOX and Fuel tanks are cylinders of the same diameter
-D = 5*2.54/100;                     % [m] Diameter of the propellant tanks
-d_ox_tank_m     = D;                % [m] Diameter of the LOX tank
-d_fuel_tank_m   = D;                % [m] Diameter of the Fuel tank
+D = 6*2.54/100;                             % [m] Outer diameter of vehicle
+d_ox_tank_m     = 5*2.54/100;               % [m] Inner diameter of the LOX tank
+d_fuel_tank_m   = 5*2.54/100;               % [m] Inner diameter of the Fuel tank
+d_pressurant_tank_allowed_m = 5*2.54/100;           % [m] Maximum allowed inner Diameter of the Pressurant tank 
 
 % Material Properties for LOX Tank 
 material_density_ox_kgm3         = 2840; % [kg/m^3] TODO: Define this value
@@ -102,17 +103,10 @@ v_fuel_m3 = m_fuel_kg/fuel_density_kgm3;    % [m^3] Volume of liquid fuel
 v_total_ox_tank_m3 = v_ox_m3/(1-ullage_fraction);       % [m^3] Total internal volume of LOX tank
 v_total_fuel_tank_m3 = v_fuel_m3/(1-ullage_fraction);   % [m^3] Total internal volume of Fuel tank
 
-% Calculate tank design pressures (Eq. 10)
-p_design_ox_pa = p_op_ox_tank_pa * safety_factor;     % [Pa] Design pressure for LOX tank
-p_design_fuel_pa = p_op_fuel_tank_pa * safety_factor; % [Pa] Design pressure for Fuel tank
-
-% Calculate cylinder wall thicknesses (Eq. 11, ASME Hoop Stress)
-t_cyl_ox_m = (p_design_ox_pa * d_ox_tank_m) / (2 * material_allowable_stress_ox_pa * joint_efficiency_ox_tank) + corrosion_allowance_m; % [m] LOX tank cylinder thickness
-t_cyl_fuel_m = (p_design_fuel_pa * d_fuel_tank_m) / (2 * material_allowable_stress_fuel_pa * joint_efficiency_fuel_tank) + corrosion_allowance_m; % [m] Fuel tank cylinder thickness
-
 % Calculate tank internal radii (Basic Geometry)
-r_ox_tank_m = d_ox_tank_m/2 - t_cyl_ox_m;       % [m] Internal radius of cylindrical ox tank
-r_fuel_tank_m = d_fuel_tank_m/2 - t_cyl_fuel_m; % [m] Internal radius of cylindrical fuel tank
+r_ox_tank_m = d_ox_tank_m/2;       % [m] Internal radius of cylindrical ox tank
+r_fuel_tank_m = d_fuel_tank_m/2;    % [m] Internal radius of cylindrical fuel tank
+r_pressurant_tank_allowed_m = d_pressurant_tank_allowed_m/2; % [m] Maximum allowed nternal radius of pressurant tank
 
 % Calculate end cap volumes (Eq. 7)
 v_caps_ox_m3 = (4/3)*pi*r_ox_tank_m^3;     % [m^3] Combined volume of the two hemispherical end caps for the LOX tank
@@ -126,6 +120,14 @@ v_cyl_fuel_m3 = v_total_fuel_tank_m3 - v_caps_fuel_m3; % [m^3] Volume of the Fue
 l_cyl_ox_m = v_cyl_ox_m3 / (pi * r_ox_tank_m^2);     % [m] Required length of the LOX tank's cylindrical section
 l_cyl_fuel_m = v_cyl_fuel_m3 / (pi * r_fuel_tank_m^2); % [m] Required length of the Fuel tank's cylindrical section
 
+% Calculate tank design pressures (Eq. 10)
+p_design_ox_pa = p_op_ox_tank_pa * safety_factor;     % [Pa] Design pressure for LOX tank
+p_design_fuel_pa = p_op_fuel_tank_pa * safety_factor; % [Pa] Design pressure for Fuel tank
+
+% Calculate cylinder wall thicknesses (Eq. 11, ASME Hoop Stress)
+t_cyl_ox_m = (p_design_ox_pa * d_ox_tank_m) / (2 * material_allowable_stress_ox_pa * joint_efficiency_ox_tank) + corrosion_allowance_m; % [m] LOX tank cylinder thickness
+t_cyl_fuel_m = (p_design_fuel_pa * d_fuel_tank_m) / (2 * material_allowable_stress_fuel_pa * joint_efficiency_fuel_tank) + corrosion_allowance_m; % [m] Fuel tank cylinder thickness
+
 % Calculate end cap wall thicknesses (Eq. 12, Spherical Shell Stress)
 % t_caps_ox_m = (p_design_ox_pa * d_ox_tank_m) / (4 * material_allowable_stress_ox_pa * joint_efficiency_ox_tank) + corrosion_allowance_m; % [m] LOX tank end cap thickness
 % t_caps_fuel_m = (p_design_fuel_pa * d_fuel_tank_m) / (4 * material_allowable_stress_fuel_pa * joint_efficiency_fuel_tank) + corrosion_allowance_m; % [m] Fuel tank end cap thickness
@@ -133,8 +135,8 @@ t_caps_ox_m = t_cyl_ox_m;     % [m] LOX tank end cap thickness
 t_caps_fuel_m = t_cyl_fuel_m; % [m] Fuel tank end cap thickness
 
 % Calculate empty tank masses (Eq. 13)
-m_empty_ox_tank_kg = material_density_ox_kgm3 * pi * ((D/2)^2-(D/2-t_cyl_ox_m)^2)*l_cyl_ox_m + 4/3*pi*((D/2)^3-(D/2-t_caps_ox_m)^3); % [kg] Mass of the empty LOX tank
-m_empty_fuel_tank_kg = material_density_fuel_kgm3 * pi * ((D/2)^2-(D/2-t_cyl_fuel_m)^2)*l_cyl_fuel_m + 4/3 * pi * ((D/2)^3-(D/2-t_caps_fuel_m)^3); % [kg] Mass of the empty Fuel tank
+m_empty_ox_tank_kg = material_density_ox_kgm3 * pi * ((r_ox_tank_m + t_cyl_ox_m)^2-r_ox_tank_m^2)*l_cyl_ox_m + 4/3*pi*((r_ox_tank_m+t_caps_ox_m)^3-r_ox_tank_m^3); % [kg] Mass of the empty LOX tank
+m_empty_fuel_tank_kg = material_density_fuel_kgm3 * pi * ((r_fuel_tank_m+t_cyl_fuel_m)^2-r_fuel_tank_m^2)*l_cyl_fuel_m + 4/3 * pi * ((r_fuel_tank_m+t_caps_fuel_m)^3-r_fuel_tank_m^3); % [kg] Mass of the empty Fuel tank
 
 % --- 2.3 - Pressurant System Sizing --- 
 
@@ -165,10 +167,10 @@ v_shell_liner_m3 = (4/3) * pi * ((r_pressurant_tank_internal_m + t_liner)^3 - (r
 m_empty_pressurant_tank_kg = material_density_pressurant_kgm3 * v_shell_pressurant_m3 + material_density_liner_kgm3 * v_shell_liner_m3; % [kg] Mass of the empty pressurant tank
 
 % Calculate pressurant tank outer diameter
-D_pressurant_tank_outer_m = 2 * (r_pressurant_tank_internal_m + t_liner + t_pressurant_tank_m);
+D_pressurant_tank_inner_m = 2 * r_pressurant_tank_internal_m;
 
-if D_pressurant_tank_outer_m > D
-    warning('Outer diameter of pressurant COPV exceeds maximum allowed diameter D. COPV converted to cylinder.');
+if D_pressurant_tank_inner_m > d_pressurant_tank_allowed_m
+    warning('Inner diameter of pressurant COPV exceeds maximum allowed diameter. COPV converted to cylinder.');
 end
 
 if l_cyl_ox_m < 0 || l_cyl_fuel_m < 0
@@ -176,10 +178,10 @@ if l_cyl_ox_m < 0 || l_cyl_fuel_m < 0
 end
 
 % Change pressurant tank to cylinder if outer diameter too large
-if D_pressurant_tank_outer_m > D
+if D_pressurant_tank_inner_m > d_pressurant_tank_allowed_m
     t_pressurant_tank_m = (p_design_pressurant_pa * (r_pressurant_tank_internal_m + t_liner)) / (material_allowable_stress_pressurant_pa * joint_efficiency_pressurant_tank) + corrosion_allowance_m; % [m] Wall thickness of pressurant tank
-    l_cyl_pressurant_m = (v_pressurant_tank_internal_m3 - 4*pi/3*(D/2 - t_pressurant_tank_m - t_liner)^3)/(pi * (D/2 - t_pressurant_tank_m - t_liner)^2); % [m] Length of cylindrical portion of pressurant tank
-    m_empty_pressurant_tank_kg = 4*pi/3*(material_density_pressurant_kgm3 * ((D/2)^3 - (D/2 - t_pressurant_tank_m)^3) + material_density_liner_kgm3 * ((D/2 - t_pressurant_tank_m)^3 - (D/2 - t_pressurant_tank_m - t_liner)^3)) + pi*(material_density_pressurant_kgm3*((D/2)^2 - (D/2 - t_pressurant_tank_m)^2) + material_density_liner_kgm3*((D/2 - t_pressurant_tank_m)^2 - (D/2 - t_pressurant_tank_m - t_liner)^2)) * l_cyl_pressurant_m; % [kg] Mass of the empty pressurant tank 
+    l_cyl_pressurant_m = (v_pressurant_tank_internal_m3 - 4*pi/3*r_pressurant_tank_allowed_m^3)/(pi * r_pressurant_tank_allowed_m^2); % [m] Length of cylindrical portion of pressurant tank
+    m_empty_pressurant_tank_kg = 4*pi/3*(material_density_pressurant_kgm3 * ((r_pressurant_tank_allowed_m + t_pressurant_tank_m + t_liner)^3 - (r_pressurant_tank_allowed_m + t_liner)^3) + material_density_liner_kgm3 * ((r_pressurant_tank_allowed_m + t_liner)^3 - r_pressurant_tank_allowed_m^3)) + pi*(material_density_pressurant_kgm3*((r_pressurant_tank_allowed_m + t_pressurant_tank_m + t_liner)^2 - (r_pressurant_tank_allowed_m + t_liner)^2) + material_density_liner_kgm3*((r_pressurant_tank_allowed_m + t_liner)^2 - r_pressurant_tank_allowed_m^2)) * l_cyl_pressurant_m; % [kg] Mass of the empty pressurant tank 
 end
 % --- 2.4 - Vehicle Mass Buildup ---
 % Placeholder for summing up all masses
@@ -190,11 +192,6 @@ m_total = m_empty_ox_tank_kg + m_empty_fuel_tank_kg + m_ox_kg + m_fuel_kg + m_em
 % Placeholder for TWR, Delta-V, and Apogee calculations
 
 TWR = (f_thrust_n / m_total) / g_earth_ms2;
-
-if TWR < 5
-    warning('Liftoff TWR is less than 5')
-end
-
 dV = i_sp_s * g_earth_ms2 * log(m_total/((m_total-(1-residual_fraction)*(m_ox_kg + m_fuel_kg))));
 
 t = 0:0.001:120;                % [s] Time interval and step to analyze
@@ -257,6 +254,5 @@ T = table(value, 'RowNames',parameter);
 uitable("Data",T{:,:},'RowName',T.Properties.RowNames,'ColumnName', {'Value'},'Units', 'Normalized', 'Position',[0.6, 0.2, 0.3, 0.212]);
 
 %% 4.0 - Test Section
-
 
 % you can use this section temporarly to test that github works for you and the changes you make are actually working
