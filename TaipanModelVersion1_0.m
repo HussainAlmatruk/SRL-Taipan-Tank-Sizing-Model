@@ -23,60 +23,59 @@ r_universal_jmolk   = 8.3145;      % [J/(mol*K)] Universal gas constant
 %% 1.0 - INPUTS
 
 % --- 1.1 Engine & Performance ---
-
 f_thrust_n      = 2891.34405;  % [N] Engine thrust
 i_sp_s          = 287.458;     % [s] Specific impulse
 t_burn_s        = 10;          % [s] Total burn time
 o_f_ratio       = 2.5;         % [unitless] Oxidizer-to-Fuel mass ratio
 
 % --- 1.2 Propellants & Pressurant ---
-ox_density_kgm3   = 1141;       % [kg/m^3] Density of Liquid Oxygen
-fuel_density_kgm3 = 820;        % [kg/m^3] Density of Jet-A
-pressurant_molar_mass_kgmol = 0.0280134; % [kg/mol] Molar mass of Nitrogen (N2)
+ox_density_kgm3   = 1141;                   % [kg/m^3] Density of Liquid Oxygen
+fuel_density_kgm3 = 820;                    % [kg/m^3] Density of Jet-A
+pressurant_molar_mass_kgmol = 0.0280134;    % [kg/mol] Molar mass of Nitrogen (N2)
 
-p_op_ox_tank_pa = 3.447e6;  %%% TEMPORARY VALUE %%% [Pa] Operating pressure (500 psi)
-p_op_fuel_tank_pa = 3.447e6;  %%% TEMPORARY VALUE %%% [Pa] Operating pressure (500 psi)
-p_storage_pressurant_pa = 3.103e7; %%% TEMPORARY VALUE %%% [Pa] MEOP (4500 psi)
-ox_temp_k = 90.19;  %%% TEMPORARY VALUE %%% [K] LOX boiling point at 1 atm
-
-fuel_temp_k       = 294;         % [K] Temperature of Jet-A in tank (Ambient)
-pressurant_temp_k = 294;        % [K] Temperature of pressurant gas in its tank
+p_op_ox_tank_pa = 850*6894.76;              % %%% TEMPORARY VALUE %%% [Pa] Operating pressure of LOX tank TODO: Define this value
+p_op_fuel_tank_pa = 850*6894.76;            % %%% TEMPORARY VALUE %%% [Pa] Operating pressure of Fuel tank TODO: Define this value
+p_storage_pressurant_pa = 3000*6894.76;     % %%% TEMPORARY VALUE %%% [Pa] The pressure the Nitrogen is stored in dedicated tank (MEOP). TODO: Define this value
+ox_temp_k         = 90;                     % %%% TEMPORARY VALUE %%% [K] Temperature of LOX in tank TODO: Define this value
+fuel_temp_k       = 294;                    % %%% TEMPORARY VALUE %%% [K] Temperature of Jet-A in tank (Ambient probably)
+pressurant_temp_k = 294;                    % %%% TEMPORARY VALUE %%% [K] Temperature of pressurant gas in its tank
 
 % --- 1.3 Vehicle Geometry & Materials ---
+% Assumption: Both LOX and Fuel tanks are cylinders of the same diameter
+d_ox_tank_m     = 5*2.54/100;               %  %%% TEMPORARY VALUE %%% [m] Inner diameter of the LOX tank
+d_fuel_tank_m   = 5*2.54/100;               %  %%% TEMPORARY VALUE %%% [m] Inner diameter of the Fuel tank
 
-d_ox_tank_m     = 0.127;      % [m] Diameter of the LOX tank (5 inches)
-d_fuel_tank_m   = 0.127;      % [m] Diameter of the Fuel tank (5 inches)
+% Material Properties for LOX Tank 
+material_density_ox_kgm3         = 2840;      % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value
+material_allowable_stress_ox_pa  = 2.90*10^8; % %%% TEMPORARY VALUE %%%  [Pa] TODO: Define this value
 
-% Material Properties for Propellant Tanks (e.g., Aluminum 6061-T6)
+% Material Properties for Fuel Tank 
+material_density_fuel_kgm3       = 2840; % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value
+material_allowable_stress_fuel_pa= 2.90*10^8; % %%% TEMPORARY VALUE %%%  [Pa] TODO: Define this value
 
-material_density_ox_kgm3 = 2700; %%% TEMPORARY VALUE %%% [kg/m^3] 
-material_allowable_stress_ox_pa  = 9.65e7; %%% TEMPORARY VALUE %%% [Pa] 
-material_density_fuel_kgm3 = 2700; %%% TEMPORARY VALUE %%% [kg/m^3] 
-material_allowable_stress_fuel_pa= 9.65e7; %%% TEMPORARY VALUE %%% [Pa] 
-
-% Material Properties for Pressurant Tank (e.g., Titanium 6Al-4V)
-
-material_density_pressurant_kgm3 = 4430; %%% TEMPORARY VALUE %%% [kg/m^3]
-material_allowable_stress_pressurant_pa= 8.3e8; %%% TEMPORARY VALUE %%% [Pa]
+% Material Properties for Pressurant Tank 
+material_density_liner_kgm3             = 2840;     % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value
+t_liner                                 = 0.003;    % %%% TEMPORARY VALUE %%%  [m] Thickness of COPV liner 
+material_density_pressurant_kgm3        = 1800;     % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value
+material_allowable_stress_pressurant_pa = 3.5*10^9; % %%% TEMPORARY VALUE %%%  [Pa] TODO: Define this value
 
 % --- 1.4 Design Margins & Factors ---
-
 safety_factor   = 1.5;        % [unitless] Safety factor for pressure vessels
-joint_efficiency_ox_tank = 0.95; %%% TEMPORARY VALUE %%% [unitless]
-joint_efficiency_fuel_tank = 0.95; %%% TEMPORARY VALUE %%% [unitless]
-joint_efficiency_pressurant_tank= 0.95; %%% TEMPORARY VALUE %%% [unitless]
+% Joint efficiency can differ based on tank material and welding process
+joint_efficiency_ox_tank        = 0.8; % %%% TEMPORARY VALUE %%%  [unitless] TODO: Define this value 
+joint_efficiency_fuel_tank      = 0.8; % %%% TEMPORARY VALUE %%%  [unitless] TODO: Define this value 
+joint_efficiency_pressurant_tank= 0.8; % %%% TEMPORARY VALUE %%%  [unitless] TODO: Define this value 
 
-corrosion_allowance_m = 0.0001; % [m] Extra thickness for material degradation
-ullage_fraction       = 0.1;    % [unitless] Percent of empty volume in tanks (10%)
+corrosion_allowance_m = 0.001;  % %%% TEMPORARY VALUE %%%  [m] Extra thickness for material degradation
+ullage_fraction       = 0.1;    % %%% TEMPORARY VALUE %%%  [unitless] Percent of empty volume in tanks (e.g., 0.1 for 10%)
 
 % --- 1.5 Estimated Masses (Non-Calculated) ---
-
-m_misc_kg     = 15; %%% TEMPORARY VALUE %%% [kg] Payload, structure, fins, etc.
-m_plumbing_kg = 5; %%% TEMPORARY VALUE %%% [kg] Valves and plumbing
+m_misc_kg     = 25; % [kg]  %%% TEMPORARY VALUE %%% TODO: Estimate mass of payload, structure, fins, avionics, recovery
+m_plumbing_kg = 10; % [kg]  %%% TEMPORARY VALUE %%% TODO: Estimate mass of valves and plumbing
 
 % --- 1.6 Design Constraints ---
 
-l_airframe_max_m = 3.048; %[m] Maximum allowable vehicle length (10 ft)
+l_airframe_max_m = 3.048; %[m] Maximum allowable vehicle length TODO: Define this value 
 
 %% 2.0 - CALCULATIONS
 % This section should not be modified unless equations are being updated or the initial code is done and is now being itirated on to optimize values
