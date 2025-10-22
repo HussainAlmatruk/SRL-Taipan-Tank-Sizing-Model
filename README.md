@@ -1,12 +1,12 @@
 # SRL Liquid Rocket - Tank Sizing and Mass Model
 
-**Authors:** Hussain Almatruk
+**Authors:** Hussain Almatruk, Jonathan Forte
 
-**Last Updated:** October 19, 2025
+**Last Updated:** October 22, 2025
 
 This repository contains the official MATLAB model for the design and analysis of the propellant and pressurant tank system for the Taipan rocket engine.
 
-Official Project's Document (Overleaf): https://www.overleaf.com/read/jwzdsjwwgnff#6aaf7d
+Official Project's Document For Phase 1 (Overleaf): https://www.overleaf.com/read/jwzdsjwwgnff#6aaf7d
 
 ## Project Purpose
 
@@ -39,28 +39,6 @@ The script is organized into sequential blocks for clear organization and mainta
 
 ## ✅ Current Tasks & To-Do List
 
-Our first priority is to get the skeleton fully functional.
 
-This might require having more inputs or outputs than the ones in the trade study documents. Make sure you: discuss beefore, and make it clear when you add any equation or a new input that is not already in the trade study document.
-
-### 1. Define Input TODOs:
-- [ ] Research and define the material properties for the LOX, Fuel, and Pressurant tanks (`material_density_*`, `material_allowable_stress_*`)
-- [ ] Determine appropriate `joint_efficiency_*` values for our chosen materials and welding processes
-- [ ] Create initial estimates for `m_misc_kg` and `m_plumbing_kg`
-
-### 2. Implement Core Calculations:
-- [x] Add formulas to section 2.1 to calculate propellant mass flow rates and total propellant mass
-- [x] Add formulas to section 2.2 to calculate Prop tank volumes, dimensions, wall thicknesses, and empty masses
-- [x] Add formulas to section 2.3 to calculate Pressurant System Sizing
-- [x] Add formulas to section 2.4 to sum all component masses into a total vehicle mass
-- [x] Add formulas to section 2.5 to calculate TWR and Delta-V
-
-### 3. Validation and Error Checks:
-- [ ] add validation and error checks to section 2.6. Checks must be implemented after the CALCULATIONS block and before the OUTPUTS block
-
-### 4. Create Formatted Outputs:
-- [ ] Add `fprintf` statements to the OUTPUTS section to display the results clearly
-
----------------------------------------------------------
 
 
