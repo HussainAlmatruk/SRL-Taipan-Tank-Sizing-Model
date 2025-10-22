@@ -24,10 +24,10 @@ A modular MATLAB script for rocket propulsion system sizing and performance calc
 
 The script is organized into sequential blocks for clear organization and maintainability:
 
-- **`%% 0.0 - SETUP & CONSTANTS`**: Clears the workspace and defines universal physical constants
+- **`%% 0.0 - SETUP & CONSTANTS`**: Clears the workspace and defines universal physical constants.
 - **`%% 1.0 - INPUTS`**: All primary design choices, material properties, and assumptions are defined here. This is the only section that should be modified for new trade studies
-- **`%% 2.0 - CALCULATIONS`**: (WORK IN PROGRESS) This section will contain all the engineering equations. It is currently a placeholder and needs to be filled in
-- **`%% 3.0 - OUTPUTS`**: (WORK IN PROGRESS) This section will display the final results in a clean, formatted summary
+- **`%% 2.0 - CALCULATIONS`**: This section will contain all the engineering equations.
+- **`%% 3.0 - OUTPUTS`**: This section will display the final results in a clean, formatted summary.
 
 ## How to Use This Repository
 
