@@ -43,11 +43,11 @@ pressurant_temp_k = 294;                    % %%% TEMPORARY VALUE %%% [K] Temper
 
 % --- 1.3 Vehicle Geometry & Materials ---
 % Assumption: Both LOX and Fuel tanks are cylinders of the same diameter
-D = 6*2.54/100;                             %  %%% TEMPORARY VALUE %%% [m] Outer diameter of vehicle
-d_ox_tank_m     = 5*2.54/100;               %  %%% TEMPORARY VALUE %%% [m] Outer diameter of the LOX tank
-d_fuel_tank_m   = 5*2.54/100;               %  %%% TEMPORARY VALUE %%% [m] Outer diameter of the Fuel tank
-d_pressurant_tank_allowed_m = 5*2.54/100;   %  %%% TEMPORARY VALUE %%% [m] Maximum allowed outer diameter of the Pressurant tank 
-C_D = 0.5;                                   %  %%% TEMPORARY VALUE %%% [~] Vehicle drag coefficient
+d_ox_tank_m     = 6*2.54/100;               %  %%% TEMPORARY VALUE %%% [m] Outer diameter of the LOX tank
+d_fuel_tank_m   = 6*2.54/100;               %  %%% TEMPORARY VALUE %%% [m] Outer diameter of the Fuel tank
+d_pressurant_tank_allowed_m = 6*2.54/100;   %  %%% TEMPORARY VALUE %%% [m] Maximum allowed outer diameter of the Pressurant tank
+d_vehicle_outer = d_ox_tank_m + 1*2.54/100; %6*2.54/100;   %  %%% TEMPORARY VALUE %%% [m] Outer diameter of vehicle
+C_D = 0.5;                                  %  %%% TEMPORARY VALUE %%% [~] Vehicle drag coefficient
 
 % Material Properties for LOX Tank 
 material_density_ox_kgm3         = 2840;      % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value
@@ -129,7 +129,7 @@ v_cyl_fuel_m3 = v_total_fuel_tank_m3 - v_caps_fuel_m3; % [m^3] Volume of the Fue
 
 % Calculate cylindrical section lengths (Eq. 9)
 l_cyl_ox_m = v_cyl_ox_m3 / (pi * (r_ox_tank_m-t_cyl_ox_m)^2);     % [m] Required length of the LOX tank's cylindrical section
-l_cyl_fuel_m = v_cyl_fuel_m3 / (pi * (r_ox_tank_m-t_cyl_ox_m)^2); % [m] Required length of the Fuel tank's cylindrical section
+l_cyl_fuel_m = v_cyl_fuel_m3 / (pi * (r_fuel_tank_m-t_cyl_fuel_m)^2); % [m] Required length of the Fuel tank's cylindrical section
 
 % Calculate empty tank masses 
 m_empty_ox_tank_kg = material_density_ox_kgm3 * (pi * (r_ox_tank_m^2 - (r_ox_tank_m - t_cyl_ox_m)^2)*l_cyl_ox_m + (2/3)*pi * (r_ox_tank_m^3 - (r_ox_tank_m - t_cyl_ox_m)^3)); % [kg] Mass of the empty LOX tank
@@ -199,8 +199,9 @@ delta_v_ms = i_sp_s * g_earth_ms2 * log(m_total_kg / m_final_kg);               
 
 % --- 2.6 - Vehicle Geometry Stackup ---
 % These calculations are performed here for use in the validation section.
-l_ox_tank_total_m = l_cyl_ox_m + d_ox_tank_m; % [m] Length of Lox cylinder + 2*radius of caps
-l_fuel_tank_total_m = l_cyl_fuel_m + d_fuel_tank_m; % [m] Length of Lox cylinder + 2*radius of caps
+% For 2:1 ellipsoidal caps, each cap's height is r/2. Total added length from two caps is (r/2) + (r/2) = r = d/2.
+l_ox_tank_total_m = l_cyl_ox_m + (d_ox_tank_m / 2);     % [m] Length of Lox cylinder + height of two 2:1 ellipsoidal caps
+l_fuel_tank_total_m = l_cyl_fuel_m + (d_fuel_tank_m / 2); % [m] Length of Fuel cylinder + height of two 2:1 ellipsoidal caps
 l_pressurant_tank_total_m = l_cyl_pressurant_m + (d_pressurant_tank_outer_m / 2); % Length of cylinder + combined height of two 2:1 ellipsoidal caps
 % NOTE: This is a simplified length sum. A real stackup would be more complex.
 l_total_vehicle_m = l_ox_tank_total_m + l_fuel_tank_total_m + l_pressurant_tank_total_m; % Add other lengths later (engine, avionics, etc.)
@@ -218,7 +219,7 @@ f_drag_n = zeros(size(t));        % [N] Pre-allocate drag force array
 thrust_n = zeros(size(t)); thrust_n(t<=t_burn_s) = f_thrust_n;  % [N] Make thrust array (should be zero after burnout)
 m_total_sim_kg = m_total_kg - m_dot_total_kgs .* t .* (thrust_n>0); m_total_sim_kg(t>t_burn_s) = m_final_kg; % [kg] Array of vehicle total mass over time
 dt_s = t(2) - t(1);   % [s] time step
-area_cross_m2 = pi * (D/2)^2;   % [m^2] Vehicle cross-sectional area
+area_cross_m2 = pi * (d_vehicle_outer/2)^2;   % [m^2] Vehicle cross-sectional area
 
 % Step through time to calculate altitue, velocity, and acceleration through time
 for n = 2:max(size(t))
