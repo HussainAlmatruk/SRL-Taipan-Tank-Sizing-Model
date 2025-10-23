@@ -46,8 +46,10 @@ pressurant_temp_k = 294;                    % %%% TEMPORARY VALUE %%% [K] Temper
 d_ox_tank_m     = 6*2.54/100;               %  %%% TEMPORARY VALUE %%% [m] Outer diameter of the LOX tank
 d_fuel_tank_m   = 6*2.54/100;               %  %%% TEMPORARY VALUE %%% [m] Outer diameter of the Fuel tank
 d_pressurant_tank_allowed_m = 6*2.54/100;   %  %%% TEMPORARY VALUE %%% [m] Maximum allowed outer diameter of the Pressurant tank
-d_vehicle_outer = d_ox_tank_m + 1*2.54/100; %6*2.54/100;   %  %%% TEMPORARY VALUE %%% [m] Outer diameter of vehicle
 C_D = 0.5;                                  %  %%% TEMPORARY VALUE %%% [~] Vehicle drag coefficient
+
+wall_thickness_m = 0.2*2.54/100;           % [m] Vehicle wall thickness
+inner_clearance_m = 0.1*2.54/100;          % [m] Clearance between tank and vehicle inner wall
 
 % Material Properties for LOX Tank 
 material_density_ox_kgm3         = 2840;      % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value
@@ -97,6 +99,13 @@ m_ox_kg = m_dot_ox_kgs*t_burn_s/(1-residual_fraction);        % [kg] Total mass 
 m_fuel_kg = m_dot_fuel_kgs *t_burn_s/(1-residual_fraction);   % [kg] Total mass of fuel
 
 % --- 2.2 - Tank Sizing & Mass ---
+
+% Find the largest tank diameter
+largest_tank_diameter = max([d_ox_tank_m, d_fuel_tank_m, d_pressurant_tank_allowed_m]);
+
+% Calculate vehicle dimensions based on inputs
+d_vehicle_inner = largest_tank_diameter + 2*inner_clearance_m;  % Inner diameter with clearance
+d_vehicle_outer = d_vehicle_inner + 2*wall_thickness_m;         % Outer diameter with wall thickness
 
 % Calculate Volume of Props (Eq. 5)
 v_ox_m3 = m_ox_kg/ox_density_kgm3;          % [m^3] Volume of liquid oxidizer
