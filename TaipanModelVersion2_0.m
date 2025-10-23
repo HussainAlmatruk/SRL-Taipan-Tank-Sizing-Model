@@ -48,7 +48,7 @@ d_fuel_tank_m   = 6*2.54/100;               %  %%% TEMPORARY VALUE %%% [m] Outer
 d_pressurant_tank_allowed_m = 6*2.54/100;   %  %%% TEMPORARY VALUE %%% [m] Maximum allowed outer diameter of the Pressurant tank
 C_D = 0.5;                                  %  %%% TEMPORARY VALUE %%% [~] Vehicle drag coefficient
 
-wall_thickness_m = 0.2*2.54/100;           % [m] Vehicle wall thickness
+wall_thickness_m = 0.2*2.54/100;           % [m] Vehicle airframe wall thickness
 inner_clearance_m = 0.1*2.54/100;          % [m] Clearance between tank and vehicle inner wall
 
 % Material Properties for LOX Tank 
@@ -83,6 +83,7 @@ m_plumbing_kg = 10; % [kg]  %%% TEMPORARY VALUE %%% TODO: Estimate mass of valve
 % --- 1.6 Design Constraints ---
 
 l_airframe_max_m = 3.048; %[m] Maximum allowable vehicle length
+twr_minimum_ratio = 5; % [ratio] Thrust to Weight ratio
 
 %% 2.0 - CALCULATIONS
 % This section should not be modified unless equations are being updated or the initial code is done and is now being itirated on to optimize values
@@ -101,11 +102,11 @@ m_fuel_kg = m_dot_fuel_kgs *t_burn_s/(1-residual_fraction);   % [kg] Total mass 
 % --- 2.2 - Tank Sizing & Mass ---
 
 % Find the largest tank diameter
-largest_tank_diameter = max([d_ox_tank_m, d_fuel_tank_m, d_pressurant_tank_allowed_m]);
+largest_tank_diameter = max([d_ox_tank_m, d_fuel_tank_m, d_pressurant_tank_allowed_m]); % [m] Find the largest outer diameter among all tanks to size the airframe
 
 % Calculate vehicle dimensions based on inputs
-d_vehicle_inner = largest_tank_diameter + 2*inner_clearance_m;  % Inner diameter with clearance
-d_vehicle_outer = d_vehicle_inner + 2*wall_thickness_m;         % Outer diameter with wall thickness
+d_vehicle_inner_m = largest_tank_diameter + 2*inner_clearance_m;  % [m] Calculate vehicle inner diameter based on largest tank + bilateral clearance
+d_vehicle_outer_m = d_vehicle_inner_m + 2*wall_thickness_m;         % [m] Calculate vehicle outer diameter based on inner diameter + bilateral wall thickness
 
 % Calculate Volume of Props (Eq. 5)
 v_ox_m3 = m_ox_kg/ox_density_kgm3;          % [m^3] Volume of liquid oxidizer
@@ -162,23 +163,24 @@ v_pressurant_tank_internal_m3 = (n_total_mol * r_universal_jmolk * pressurant_te
 
 % Calculate wall thickness of spherical pressurant tank (Eq. 19)
 p_design_pressurant_pa = p_storage_pressurant_pa * safety_factor; % [Pa] Design pressure for pressurant tank
+
 % Define outer and liner radii based on the allowed diameter
-r_pressurant_outer_m = d_pressurant_tank_allowed_m / 2;
-r_pressurant_liner_outer_m = r_pressurant_outer_m - t_liner_m;
+r_pressurant_outer_m = d_pressurant_tank_allowed_m / 2; % [m] Outer radius of the pressurant tank (based on allowed diameter)
+r_pressurant_liner_outer_m = r_pressurant_outer_m - t_liner_m; % [m] Outer radius of the COPV liner
 
 % Calculate wall thickness using hoop stress formula for a cylinder
 % We use the liner's outer radius for this calculation
 t_pressurant_tank_m = (p_design_pressurant_pa * r_pressurant_liner_outer_m) / (material_allowable_stress_pressurant_pa * joint_efficiency_pressurant_tank) + corrosion_allowance_m; % [m] Wall thickness
 
 % Calculate the final internal radius of the pressure vessel
-r_pressurant_internal_m = r_pressurant_liner_outer_m - t_pressurant_tank_m;
+r_pressurant_internal_m = r_pressurant_liner_outer_m - t_pressurant_tank_m; % [m] Final internal radius of the pressurant tank (inside the liner)
 
 % Calculate the internal volume of the two 2:1 ellipsoidal end caps
-v_caps_pressurant_m3 = (2/3) * pi * r_pressurant_internal_m^3;
+v_caps_pressurant_m3 = (2/3) * pi * r_pressurant_internal_m^3; % [m^3] Combined internal volume of the two 2:1 ellipsoidal end caps
 
 % Calculate the required volume and length of the cylindrical section
-v_cyl_pressurant_m3 = v_pressurant_tank_internal_m3 - v_caps_pressurant_m3;
-if v_cyl_pressurant_m3 < 0
+v_cyl_pressurant_m3 = v_pressurant_tank_internal_m3 - v_caps_pressurant_m3; % [m^3] Required internal volume of the pressurant tank's cylindrical section
+if v_cyl_pressurant_m3 < 0 % Check if the required volume fits within the end caps alone
     warning('Pressurant tank volume is too small; the end caps alone provide more volume than required. Consider a smaller diameter or spherical tank.');
     l_cyl_pressurant_m = 0; % Set length to zero if caps are sufficient
     v_cyl_pressurant_m3 = 0;
@@ -188,15 +190,15 @@ end
 
 % Calculate the mass of the empty pressurant tank (COPV)
 % Mass = (Volume of Carbon Fiber Shell + Volume of Liner) * Respective Densities
-m_shell_cyl_material = pi * (r_pressurant_outer_m^2 - r_pressurant_liner_outer_m^2) * l_cyl_pressurant_m;
-m_shell_caps_material = (2/3)*pi * (r_pressurant_outer_m^3 - r_pressurant_liner_outer_m^3);
-m_liner_cyl_material = pi * (r_pressurant_liner_outer_m^2 - r_pressurant_internal_m^2) * l_cyl_pressurant_m;
-m_liner_caps_material = (2/3)*pi * (r_pressurant_liner_outer_m^3 - r_pressurant_internal_m^3);
+m_shell_cyl_material = pi * (r_pressurant_outer_m^2 - r_pressurant_liner_outer_m^2) * l_cyl_pressurant_m; % [m^3] Volume of the carbon fiber shell (cylindrical section)
+m_shell_caps_material = (2/3)*pi * (r_pressurant_outer_m^3 - r_pressurant_liner_outer_m^3); % [m^3] Volume of the carbon fiber shell (both 2:1 ellipsoidal end caps)
+m_liner_cyl_material = pi * (r_pressurant_liner_outer_m^2 - r_pressurant_internal_m^2) * l_cyl_pressurant_m; % [m^3] Volume of the liner (cylindrical section)
+m_liner_caps_material = (2/3)*pi * (r_pressurant_liner_outer_m^3 - r_pressurant_internal_m^3); % [m^3] Volume of the liner (both 2:1 ellipsoidal end caps)
 
-m_empty_pressurant_tank_kg = material_density_pressurant_kgm3 * (m_shell_cyl_material + m_shell_caps_material) + material_density_liner_kgm3 * (m_liner_cyl_material + m_liner_caps_material);
+m_empty_pressurant_tank_kg = material_density_pressurant_kgm3 * (m_shell_cyl_material + m_shell_caps_material) + material_density_liner_kgm3 * (m_liner_cyl_material + m_liner_caps_material); % [kg] Total empty mass of COPV (Shell Mass + Liner Mass)
 
 % Calculate pressurant tank outer diameter and length for geometry stackup
-d_pressurant_tank_outer_m = 2 * r_pressurant_outer_m;
+d_pressurant_tank_outer_m = 2 * r_pressurant_outer_m; % [m] Final outer diameter of the pressurant tank (for stackup)
 
 % --- 2.4 - Vehicle Mass Buildup ---
 m_total_kg = m_empty_ox_tank_kg + m_empty_fuel_tank_kg + m_ox_kg + m_fuel_kg + m_empty_pressurant_tank_kg + m_pressurant_gas_kg + m_plumbing_kg + m_misc_kg; % [kg] Total vehicle liftoff mass
@@ -211,9 +213,9 @@ delta_v_ms = i_sp_s * g_earth_ms2 * log(m_total_kg / m_final_kg);               
 % For 2:1 ellipsoidal caps, each cap's height is r/2. Total added length from two caps is (r/2) + (r/2) = r = d/2.
 l_ox_tank_total_m = l_cyl_ox_m + (d_ox_tank_m / 2);     % [m] Length of Lox cylinder + height of two 2:1 ellipsoidal caps
 l_fuel_tank_total_m = l_cyl_fuel_m + (d_fuel_tank_m / 2); % [m] Length of Fuel cylinder + height of two 2:1 ellipsoidal caps
-l_pressurant_tank_total_m = l_cyl_pressurant_m + (d_pressurant_tank_outer_m / 2); % Length of cylinder + combined height of two 2:1 ellipsoidal caps
+l_pressurant_tank_total_m = l_cyl_pressurant_m + (d_pressurant_tank_outer_m / 2); % [m] Length of cylinder + combined height of two 2:1 ellipsoidal caps
 % NOTE: This is a simplified length sum. A real stackup would be more complex.
-l_total_vehicle_m = l_ox_tank_total_m + l_fuel_tank_total_m + l_pressurant_tank_total_m; % Add other lengths later (engine, avionics, etc.)
+l_total_vehicle_m = l_ox_tank_total_m + l_fuel_tank_total_m + l_pressurant_tank_total_m; % [m] Simplified total vehicle length (tanks only). TODO: Add engine, avionics, recovery, etc.
 
 
 %% 3.0 - MODEL PHASES OF FLIGHT
@@ -228,14 +230,14 @@ f_drag_n = zeros(size(t));        % [N] Pre-allocate drag force array
 thrust_n = zeros(size(t)); thrust_n(t<=t_burn_s) = f_thrust_n;  % [N] Make thrust array (should be zero after burnout)
 m_total_sim_kg = m_total_kg - m_dot_total_kgs .* t .* (thrust_n>0); m_total_sim_kg(t>t_burn_s) = m_final_kg; % [kg] Array of vehicle total mass over time
 dt_s = t(2) - t(1);   % [s] time step
-area_cross_m2 = pi * (d_vehicle_outer/2)^2;   % [m^2] Vehicle cross-sectional area
+area_cross_m2 = pi * (d_vehicle_outer_m/2)^2;   % [m^2] Vehicle cross-sectional area
 
 % Step through time to calculate altitue, velocity, and acceleration through time
 for n = 2:max(size(t))
     velocity_ms(n) = velocity_ms(n-1) + acceleration_ms2(n-1) * dt_s;                                   % [m/s] Velocity array
     altitude_m(n) = altitude_m(n-1) + velocity_ms(n-1) * dt_s;                                          % [m] Altitude array
-    [~,~,~,rho_kgm3,~,~] = atmosisa(altitude_m(n));                                                     % [kg/m^3] Air density at current altitude
-    f_drag_n(n) = - 0.5 * rho_kgm3 * C_D * area_cross_m2 * velocity_ms(n) * abs(velocity_ms(n));        % [N] Vehicle drag
+    [~,~,~,rho_kgm3,~,~] = atmosisa(altitude_m(n));                                                     % [kg/m^3] Get atmospheric density at current altitude using ISA model
+    f_drag_n(n) = - 0.5 * rho_kgm3 * C_D * area_cross_m2 * velocity_ms(n) * abs(velocity_ms(n));        % [N] Vehicle drag (using v*abs(v) to ensure drag always opposes velocity)
     acceleration_ms2(n) = (thrust_n(n) + f_drag_n(n)) / m_total_sim_kg(n) - g_earth_ms2;                % [m/s^2] Vehicle acceleration
 % end the simulation if the rocket reaches the ground
 if altitude_m(n) < 0
@@ -245,9 +247,9 @@ end
 
 h_max_m = max(altitude_m);                    % [m] Estimated apogee
 f_drag_max_n = max(f_drag_n);                 % [N] Maximum drag force
-maxq_pa = f_drag_max_n/(C_D * area_cross_m2); % [Pa] Maximum dynamic pressure
+maxq_pa = f_drag_max_n/(C_D * area_cross_m2); % [Pa] Maximum dynamic pressure (derived from F_drag = q * C_D * A)
 
-end_of_flight_event = find(altitude_m(10:end)==0,1,'first'); % [~] Time step when flight ends (used for plotting)
+end_of_flight_event = find(altitude_m(10:end)==0,1,'first'); % [index] Find time index when flight ends (rocket hits ground). Starts search after 10 steps to avoid t=0.
 
 %% 4.0 - VALIDATION AND CHECKS
 % This section implements the checks defined in the technical plan.
@@ -255,7 +257,7 @@ end_of_flight_event = find(altitude_m(10:end)==0,1,'first'); % [~] Time step whe
 warning_messages = {}; % Initialize a cell array to store warning messages (There might be multiple)
 
 % TWR Check
-if twr_ratio < 5 % add this value to the top for the next version
+if twr_ratio < twr_minimum_ratio % Check if TWR is above the minimum requirement
     warning_messages{end+1} = sprintf('TWR is %.2f, which is below the minimum requirement of 5.', twr_ratio);
 end
 
