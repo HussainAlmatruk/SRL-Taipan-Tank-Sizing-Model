@@ -71,7 +71,7 @@ joint_efficiency_fuel_tank      = 0.8; % %%% TEMPORARY VALUE %%%  [unitless] TOD
 joint_efficiency_pressurant_tank= 0.8; % %%% TEMPORARY VALUE %%%  [unitless] TODO: Define this value 
 
 corrosion_allowance_m = 0.001;       % %%% TEMPORARY VALUE %%%  [m] Extra thickness for material degradation
-ullage_fraction_ox       = 0.1;      % %%% TEMPORARY VALUE %%%  [unitless] Percent of empty volume in tanks (e.g., 0.1 for 10%)
+ullage_fraction_ox       = 0.2;      % %%% TEMPORARY VALUE %%%  [unitless] Percent of empty volume in tanks (e.g., 0.1 for 10%)
 ullage_fraction_fuel     = 0.1;      % %%% TEMPORARY VALUE %%%  [unitless] Percent of empty volume in tanks (e.g., 0.1 for 10%)
 
 % --- 1.5 Estimated Masses (Non-Calculated) ---
@@ -80,7 +80,7 @@ m_plumbing_kg = 10; % [kg]  %%% TEMPORARY VALUE %%% TODO: Estimate mass of valve
 
 % --- 1.6 Design Constraints ---
 
-l_airframe_max_m = 3.048; %[m] Maximum allowable vehicle length TODO: Define this value 
+l_airframe_max_m = 3.048; %[m] Maximum allowable vehicle length
 
 %% 2.0 - CALCULATIONS
 % This section should not be modified unless equations are being updated or the initial code is done and is now being itirated on to optimize values
@@ -185,12 +185,26 @@ end
 m_total_kg = m_empty_ox_tank_kg + m_empty_fuel_tank_kg + m_ox_kg + m_fuel_kg + m_empty_pressurant_tank_kg + m_pressurant_gas_kg + m_plumbing_kg + m_misc_kg; % [kg] Total vehicle liftoff mass
 m_final_kg = m_total_kg - (1 - residual_fraction) * (m_ox_kg + m_fuel_kg); % [kg] Final mass after propellant is consumed
 
-% --- 2.5 - Performance Analysis ---
-
+% --- 2.5 - Static Performance Metrics ---
 twr_ratio = (f_thrust_n / m_total_kg) / g_earth_ms2;                                % [unitless] Thrust-to-Weight ratio unitless
 delta_v_ms = i_sp_s * g_earth_ms2 * log(m_total_kg / m_final_kg);                   % [m/s] Ideal change in velocity
 
-% 1D Flight Sim
+% --- 2.6 - Vehicle Geometry Stackup ---
+% These calculations are performed here for use in the validation section.
+l_ox_tank_total_m = l_cyl_ox_m + d_ox_tank_m; % [m] Length of Lox cylinder + 2*radius of caps
+l_fuel_tank_total_m = l_cyl_fuel_m + d_fuel_tank_m; % [m] Length of Lox cylinder + 2*radius of caps
+l_pressurant_tank_total_m = d_pressurant_tank_outer_m;
+if d_pressurant_tank_outer_m > d_pressurant_tank_allowed_m
+    l_pressurant_tank_total_m = l_cyl_pressurant_m + d_pressurant_tank_allowed_m;
+end
+% NOTE: This is a simplified length sum. A real stackup would be more complex.
+l_total_vehicle_m = l_ox_tank_total_m + l_fuel_tank_total_m + l_pressurant_tank_total_m; % Add other lengths later (engine, avionics, etc.)
+
+
+%% 3.0 - MODEL PHASES OF FLIGHT
+% This section contains time-dependant simulations, e.g., the flight sim.
+
+% --- 3.1 - 1D Flight Simulation ---
 t = 0:0.001:120;                % [s] Time interval and step to analyze
 altitude_m = zeros(size(t));      % [m] Pre-allocate altitude array
 velocity_ms = zeros(size(t));      % [m/s] Pre-allocate velocity array
@@ -207,20 +221,20 @@ for n = 2:max(size(t))
     altitude_m(n) = altitude_m(n-1) + velocity_ms(n-1) * dt_s;                                          % [m] Altitude array
     [~,~,~,rho_kgm3,~,~] = atmosisa(altitude_m(n));                                                     % [kg/m^3] Air density at current altitude
     f_drag_n(n) = - 0.5 * rho_kgm3 * C_D * area_cross_m2 * velocity_ms(n) * abs(velocity_ms(n));        % [N] Vehicle drag
-    acceleration_ms2(n) = (thrust_n(n) + f_drag_n(n)) / m_total_sim_kg(n) - g_earth_ms2;                   % [m/s^2] Vehicle acceleration
+    acceleration_ms2(n) = (thrust_n(n) + f_drag_n(n)) / m_total_sim_kg(n) - g_earth_ms2;                % [m/s^2] Vehicle acceleration
 % end the simulation if the rocket reaches the ground
 if altitude_m(n) < 0
     break
 end
 end
 
-h_max_m = max(altitude_m);                                          % [m] Estimated apogee
-f_drag_max_n = max(f_drag_n);                                       % [N] Maximum drag force
-maxq_pa = f_drag_max_n/(C_D * area_cross_m2);                                      % [Pa] Maximum dynamic pressure
+h_max_m = max(altitude_m);                    % [m] Estimated apogee
+f_drag_max_n = max(f_drag_n);                 % [N] Maximum drag force
+maxq_pa = f_drag_max_n/(C_D * area_cross_m2); % [Pa] Maximum dynamic pressure
 
 end_of_flight_event = find(altitude_m(10:end)==0,1,'first'); % [~] Time step when flight ends (used for plotting)
 
-% --- 2.6 - Validation and Error Checks ---
+%% 4.0 - VALIDATION AND CHECKS
 % This section implements the checks defined in the technical plan.
 
 warning_messages = {}; % Initialize a cell array to store warning messages (There might be multiple)
@@ -230,18 +244,7 @@ if twr_ratio < 5 % add this value to the top for the next version
     warning_messages{end+1} = sprintf('TWR is %.2f, which is below the minimum requirement of 5.', twr_ratio);
 end
 
-% The Calculations in this section should be moved up for the next version
-
 % Geometric Fit Check
-l_ox_tank_total_m = l_cyl_ox_m + d_ox_tank_m; % [m] Length of Lox cylinder + 2*radius of caps
-l_fuel_tank_total_m = l_cyl_fuel_m + d_fuel_tank_m; % [m] Length of Lox cylinder + 2*radius of caps
-l_pressurant_tank_total_m = d_pressurant_tank_outer_m;
-if d_pressurant_tank_outer_m > d_pressurant_tank_allowed_m
-    l_pressurant_tank_total_m = l_cyl_pressurant_m + d_pressurant_tank_allowed_m;
-end
-% NOTE: This is a simplified length sum. A real stackup would be more complex.
-l_total_vehicle_m = l_ox_tank_total_m + l_fuel_tank_total_m + l_pressurant_tank_total_m; % Add other lengths later (engine, avionics, etc.)
-
 if l_total_vehicle_m > l_airframe_max_m
     warning_messages{end+1} = sprintf('Estimated vehicle length (%.2f m) exceeds max airframe length (%.2f m).', l_total_vehicle_m, l_airframe_max_m);
 end
@@ -254,7 +257,6 @@ if l_cyl_fuel_m < 0
     warning_messages{end+1} = 'Invalid Fuel tank geometry: Cylindrical section length is negative. End caps are too large for the required volume.';
 end
 
-
 % Input Sanity Checks (Example)
 if ullage_fraction_fuel <= 0 || ullage_fraction_fuel >= 1 || ullage_fraction_ox <= 0 || ullage_fraction_ox >= 1
     warning_messages{end+1} = 'Ullage fraction must be between 0 and 1.';
@@ -264,10 +266,9 @@ if safety_factor <= 1
 end
 
 
-%% 3.0 - OUTPUTS
+%% 5.0 - OUTPUTS
 % This section displays the final calculated values in a clean format.
 
-% This section displays the final calculated values in a clean format.
 fprintf('====================================================\n');
 fprintf('      Taipan Vehicle Mass & Tank Design Results     \n');
 fprintf('====================================================\n\n');
@@ -290,8 +291,9 @@ fprintf('Wet Mass (Liftoff):           %8.2f kg\n\n', m_total_kg);
 
 % --- Tank Geometry ---
 fprintf('--- Tank Geometry ---\n');
-fprintf('LOX Tank Cyl. Length:         %8.3f m\n', l_cyl_ox_m);
-fprintf('Fuel Tank Cyl. Length:        %8.3f m\n', l_cyl_fuel_m);
+fprintf('LOX Total Tank Length:         %8.3f m\n', l_ox_tank_total_m);
+fprintf('Fuel Total Tank Length:        %8.3f m\n', l_fuel_tank_total_m);
+fprintf('Pressurant Total Tank Cyl. Length:        %8.3f m\n', l_pressurant_tank_total_m);
 fprintf('Pressurant Tank Int. Radius:  %8.3f m\n', r_pressurant_tank_internal_m);
 fprintf('Pressurant Tank Wall Thick:   %8.4f m (%5.2f mm)\n\n', t_pressurant_tank_m, t_pressurant_tank_m*1000);
 
@@ -314,9 +316,6 @@ else
     fprintf('--- All design checks passed. ---\n');
 end
 
-%% 4.0 - Test Section
-
+%% 6.0 - TEST SECTION
 % you can use this section temporarly to test that github works for you and the changes you make are actually working
-
-
 
