@@ -303,7 +303,6 @@ fprintf('Pressurant Tank Int. Radius:  %8.3f m\n', r_pressurant_internal_m);
 fprintf('Pressurant Tank Wall Thick:   %8.4f m (%5.2f mm)\n', t_pressurant_tank_m, t_pressurant_tank_m*1000);
 fprintf('Pressurant Tank Out. Radius:  %8.3f m\n\n', r_pressurant_outer_m);
 
-
 % --- Performance Analysis ---
 fprintf('--- Performance ---\n');
 fprintf('Liftoff Thrust-to-Weight Ratio (TWR): %8.2f\n', twr_ratio);
