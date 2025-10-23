@@ -195,19 +195,19 @@ t = 0:0.001:120;                % [s] Time interval and step to analyze
 altitude_m = zeros(size(t));      % [m] Pre-allocate altitude array
 velocity_ms = zeros(size(t));      % [m/s] Pre-allocate velocity array
 acceleration_ms2 = zeros(size(t));  % [m/s^2] Pre-allocate acceleration array
-F_drag_N = zeros(size(t));        % [N] Pre-allocate drag force array
-thrust_N = zeros(size(t)); thrust_N(t<=t_burn_s) = f_thrust_n;  % [N] Make thrust array (should be zero after burnout)
-m_total_sim = m_total_kg - m_dot_total_kgs .* t .* (thrust_N>0); m_total_sim(t>t_burn_s) = m_final_kg; % [kg] Array of vehicle total mass over time
-dt = t(2) - t(1);   % [s] time step
-A = pi * (D/2)^2;   % [m^2] Vehicle cross-sectional area
+f_drag_n = zeros(size(t));        % [N] Pre-allocate drag force array
+thrust_n = zeros(size(t)); thrust_n(t<=t_burn_s) = f_thrust_n;  % [N] Make thrust array (should be zero after burnout)
+m_total_sim = m_total_kg - m_dot_total_kgs .* t .* (thrust_n>0); m_total_sim(t>t_burn_s) = m_final_kg; % [kg] Array of vehicle total mass over time
+dt_s = t(2) - t(1);   % [s] time step
+area_cross_m2 = pi * (D/2)^2;   % [m^2] Vehicle cross-sectional area
 
 % Step through time to calculate altitue, velocity, and acceleration through time
 for n = 2:max(size(t))
-    velocity_ms(n) = velocity_ms(n-1) + acceleration_ms2(n-1) * dt;                       % [m/s] Velocity array
-    altitude_m(n) = altitude_m(n-1) + velocity_ms(n-1) * dt;                           % [m] Altitude array
+    velocity_ms(n) = velocity_ms(n-1) + acceleration_ms2(n-1) * dt_s;                       % [m/s] Velocity array
+    altitude_m(n) = altitude_m(n-1) + velocity_ms(n-1) * dt_s;                           % [m] Altitude array
     [~,~,~,rho_kgm3,~,~] = atmosisa(altitude_m(n));                                    % [kg/m^3] Air density at current altitude
-    F_drag_N(n) = - 0.5 * rho_kgm3 * C_D * A * velocity_ms(n) * abs(velocity_ms(n));         % [N] Vehicle drag
-    acceleration_ms2(n) = (thrust_N(n) + F_drag_N(n)) / m_total_sim(n) - g_earth_ms2;   % [m/s^2] Vehicle acceleration
+    f_drag_n(n) = - 0.5 * rho_kgm3 * C_D * area_cross_m2 * velocity_ms(n) * abs(velocity_ms(n));         % [N] Vehicle drag
+    acceleration_ms2(n) = (thrust_n(n) + f_drag_n(n)) / m_total_sim(n) - g_earth_ms2;   % [m/s^2] Vehicle acceleration
 % end the simulation if the rocket reaches the ground
 if altitude_m(n) < 0
     break
@@ -215,8 +215,8 @@ end
 end
 
 h_max_m = max(altitude_m);                                          % [m] Estimated apogee
-F_drag_max_N = max(F_drag_N);                                       % [N] Maximum drag force
-maxq = F_drag_max_N/(C_D * A);                                      % [Pa] Maximum dynamic pressure
+f_drag_max_n = max(f_drag_n);                                       % [N] Maximum drag force
+maxq_pa = f_drag_max_n/(C_D * area_cross_m2);                                      % [Pa] Maximum dynamic pressure
 
 endofflight = find(altitude_m(10:end)==0,1,'first'); % [~] Time step when flight ends (used for plotting)
 
@@ -299,8 +299,8 @@ fprintf('Pressurant Tank Wall Thick:   %8.4f m (%5.2f mm)\n\n', t_pressurant_tan
 fprintf('--- Performance ---\n');
 fprintf('Liftoff Thrust-to-Weight Ratio (TWR): %8.2f\n', twr_ratio);
 fprintf('Ideal Delta-V:                %8.2f m/s\n', delta_v_ms);
-fprintf('Maximum Drag Force:           %8.2f N\n', F_drag_max_N);
-fprintf('Max Q:                        %8.2f Pa\n', maxq);
+fprintf('Maximum Drag Force:           %8.2f N\n', f_drag_max_n);
+fprintf('Max Q:                        %8.2f Pa\n', maxq_pa);
 fprintf('Estimated Apogee:             %8.2f m    (%8.2f ft)\n\n', h_max_m, h_max_m/0.3048);
 
 % --- Warnings & Validation ---
