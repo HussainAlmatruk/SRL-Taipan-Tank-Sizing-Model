@@ -59,7 +59,7 @@ material_allowable_stress_fuel_pa= 2.90*10^8; % %%% TEMPORARY VALUE %%%  [Pa] TO
 
 % Material Properties for Pressurant Tank 
 material_density_liner_kgm3             = 2840;     % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value
-t_liner                                 = 0.003;    % %%% TEMPORARY VALUE %%%  [m] Thickness of COPV liner 
+t_liner_m                                 = 0.003;    % %%% TEMPORARY VALUE %%%  [m] Thickness of COPV liner 
 material_density_pressurant_kgm3        = 1800;     % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value
 material_allowable_stress_pressurant_pa = 3.5*10^9; % %%% TEMPORARY VALUE %%%  [Pa] TODO: Define this value
 
@@ -163,12 +163,12 @@ p_design_pressurant_pa = p_storage_pressurant_pa * safety_factor; % [Pa] Design 
 t_pressurant_tank_m = (p_design_pressurant_pa * r_pressurant_tank_internal_m) / (2 * material_allowable_stress_pressurant_pa * joint_efficiency_pressurant_tank) + corrosion_allowance_m; % [m] Wall thickness of pressurant tank
 
 % Calculate mass of empty pressurant tank (Eq. 20)
-v_shell_pressurant_m3 = (4/3) * pi * ((r_pressurant_tank_internal_m + t_liner + t_pressurant_tank_m)^3 - (r_pressurant_tank_internal_m + t_liner)^3); % [m^3] Volume of the tank material
-v_shell_liner_m3 = (4/3) * pi * ((r_pressurant_tank_internal_m + t_liner)^3 - (r_pressurant_tank_internal_m )^3); % [m^3] Volume of the tank liner material
+v_shell_pressurant_m3 = (4/3) * pi * ((r_pressurant_tank_internal_m + t_liner_m + t_pressurant_tank_m)^3 - (r_pressurant_tank_internal_m + t_liner_m)^3); % [m^3] Volume of the tank material
+v_shell_liner_m3 = (4/3) * pi * ((r_pressurant_tank_internal_m + t_liner_m)^3 - (r_pressurant_tank_internal_m )^3); % [m^3] Volume of the tank liner material
 m_empty_pressurant_tank_kg = material_density_pressurant_kgm3 * v_shell_pressurant_m3 + material_density_liner_kgm3 * v_shell_liner_m3; % [kg] Mass of the empty pressurant tank
 
 % Calculate pressurant tank outer diameter
-d_pressurant_tank_outer_m = 2 * (r_pressurant_tank_internal_m + t_liner + t_pressurant_tank_m);     % [m] Outer diameter of pressurant tank
+d_pressurant_tank_outer_m = 2 * (r_pressurant_tank_internal_m + t_liner_m + t_pressurant_tank_m);     % [m] Outer diameter of pressurant tank
 
 if d_pressurant_tank_outer_m > d_pressurant_tank_allowed_m
     warning('Outer diameter of pressurant COPV exceeds maximum allowed diameter. COPV converted to cylinder.');
@@ -176,9 +176,9 @@ end
 
 % Change pressurant tank to cylinder if outer diameter too large
 if d_pressurant_tank_outer_m > d_pressurant_tank_allowed_m
-    t_pressurant_tank_m = (p_design_pressurant_pa * (r_pressurant_tank_internal_m + t_liner)) / (material_allowable_stress_pressurant_pa * joint_efficiency_pressurant_tank) + corrosion_allowance_m; % [m] Wall thickness of pressurant tank
-    l_cyl_pressurant_m = (v_pressurant_tank_internal_m3 - 4*pi/3*(r_pressurant_tank_allowed_m - t_liner - t_pressurant_tank_m)^3)/(pi * (r_pressurant_tank_allowed_m - t_liner - t_pressurant_tank_m)^2); % [m] Length of cylindrical portion of pressurant tank
-    m_empty_pressurant_tank_kg = 4*pi/3*(material_density_pressurant_kgm3 * (r_pressurant_tank_allowed_m^3 - (r_pressurant_tank_allowed_m - t_pressurant_tank_m)^3) + material_density_liner_kgm3 * ((r_pressurant_tank_allowed_m - t_pressurant_tank_m)^3 - (r_pressurant_tank_allowed_m - t_pressurant_tank_m - t_liner)^3)) + pi*(material_density_pressurant_kgm3*(r_pressurant_tank_allowed_m^2 - (r_pressurant_tank_allowed_m - t_pressurant_tank_m)^2) + material_density_liner_kgm3*((r_pressurant_tank_allowed_m - t_pressurant_tank_m)^2 - (r_pressurant_tank_allowed_m - t_pressurant_tank_m - t_liner)^2)) * l_cyl_pressurant_m; % [kg] Mass of the empty pressurant tank 
+    t_pressurant_tank_m = (p_design_pressurant_pa * (r_pressurant_tank_internal_m + t_liner_m)) / (material_allowable_stress_pressurant_pa * joint_efficiency_pressurant_tank) + corrosion_allowance_m; % [m] Wall thickness of pressurant tank
+    l_cyl_pressurant_m = (v_pressurant_tank_internal_m3 - 4*pi/3*(r_pressurant_tank_allowed_m - t_liner_m - t_pressurant_tank_m)^3)/(pi * (r_pressurant_tank_allowed_m - t_liner_m - t_pressurant_tank_m)^2); % [m] Length of cylindrical portion of pressurant tank
+    m_empty_pressurant_tank_kg = 4*pi/3*(material_density_pressurant_kgm3 * (r_pressurant_tank_allowed_m^3 - (r_pressurant_tank_allowed_m - t_pressurant_tank_m)^3) + material_density_liner_kgm3 * ((r_pressurant_tank_allowed_m - t_pressurant_tank_m)^3 - (r_pressurant_tank_allowed_m - t_pressurant_tank_m - t_liner_m)^3)) + pi*(material_density_pressurant_kgm3*(r_pressurant_tank_allowed_m^2 - (r_pressurant_tank_allowed_m - t_pressurant_tank_m)^2) + material_density_liner_kgm3*((r_pressurant_tank_allowed_m - t_pressurant_tank_m)^2 - (r_pressurant_tank_allowed_m - t_pressurant_tank_m - t_liner_m)^2)) * l_cyl_pressurant_m; % [kg] Mass of the empty pressurant tank 
 end
 
 % --- 2.4 - Vehicle Mass Buildup ---
