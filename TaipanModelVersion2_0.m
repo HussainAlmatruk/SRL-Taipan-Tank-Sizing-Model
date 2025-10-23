@@ -47,7 +47,7 @@ D = 6*2.54/100;                             %  %%% TEMPORARY VALUE %%% [m] Outer
 d_ox_tank_m     = 5*2.54/100;               %  %%% TEMPORARY VALUE %%% [m] Outer diameter of the LOX tank
 d_fuel_tank_m   = 5*2.54/100;               %  %%% TEMPORARY VALUE %%% [m] Outer diameter of the Fuel tank
 d_pressurant_tank_allowed_m = 5*2.54/100;   %  %%% TEMPORARY VALUE %%% [m] Maximum allowed outer diameter of the Pressurant tank 
-C_D = .5;                                   %  %%% TEMPORARY VALUE %%% [~] Vehicle drag coefficient
+C_D = 0.5;                                   %  %%% TEMPORARY VALUE %%% [~] Vehicle drag coefficient
 
 % Material Properties for LOX Tank 
 material_density_ox_kgm3         = 2840;      % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value
@@ -115,17 +115,13 @@ r_pressurant_tank_allowed_m = d_pressurant_tank_allowed_m/2; % [m] Maximum allow
 p_design_ox_pa = p_op_ox_tank_pa * safety_factor;     % [Pa] Design pressure for LOX tank
 p_design_fuel_pa = p_op_fuel_tank_pa * safety_factor; % [Pa] Design pressure for Fuel tank
 
-% Calculate end cap wall thicknesses (Eq. 12, Spherical Shell Stress)
-t_caps_ox_m = (p_design_ox_pa * d_ox_tank_m) / (4 * material_allowable_stress_ox_pa * joint_efficiency_ox_tank) + corrosion_allowance_m; % [m] LOX tank end cap thickness
-t_caps_fuel_m = (p_design_fuel_pa * d_fuel_tank_m) / (4 * material_allowable_stress_fuel_pa * joint_efficiency_fuel_tank) + corrosion_allowance_m; % [m] Fuel tank end cap thickness
-
 % Calculate cylinder wall thicknesses (Eq. 11, ASME Hoop Stress)
 t_cyl_ox_m = (p_design_ox_pa * d_ox_tank_m) / (2 * material_allowable_stress_ox_pa * joint_efficiency_ox_tank) + corrosion_allowance_m; % [m] LOX tank cylinder thickness
 t_cyl_fuel_m = (p_design_fuel_pa * d_fuel_tank_m) / (2 * material_allowable_stress_fuel_pa * joint_efficiency_fuel_tank) + corrosion_allowance_m; % [m] Fuel tank cylinder thickness
 
-% Calculate end cap volumes (Eq. 7)
-v_caps_ox_m3 = (4/3)*pi*(r_ox_tank_m - t_caps_ox_m)^3;     % [m^3] Combined volume of the two hemispherical end caps for the LOX tank
-v_caps_fuel_m3 = (4/3)*pi*(r_fuel_tank_m - t_caps_fuel_m)^3; % [m^3] Combined volume of the two hemispherical end caps for the Fuel tank
+% Calculate end cap volumes
+v_caps_ox_m3 = (2/3)*pi*(r_ox_tank_m - t_cyl_ox_m)^3;     % [m^3] Combined volume of the two 2:1 ellipsoidal end caps for the LOX tank
+v_caps_fuel_m3 = (2/3)*pi*(r_fuel_tank_m - t_cyl_fuel_m)^3; % [m^3] Combined volume of the two 2:1 ellipsoidal end caps for the Fuel tank
 
 % Calculate cylindrical section volumes (Eq. 8)
 v_cyl_ox_m3 = v_total_ox_tank_m3 - v_caps_ox_m3;     % [m^3] Volume of the LOX tank's cylindrical section
@@ -135,9 +131,9 @@ v_cyl_fuel_m3 = v_total_fuel_tank_m3 - v_caps_fuel_m3; % [m^3] Volume of the Fue
 l_cyl_ox_m = v_cyl_ox_m3 / (pi * (r_ox_tank_m-t_cyl_ox_m)^2);     % [m] Required length of the LOX tank's cylindrical section
 l_cyl_fuel_m = v_cyl_fuel_m3 / (pi * (r_ox_tank_m-t_cyl_ox_m)^2); % [m] Required length of the Fuel tank's cylindrical section
 
-% Calculate empty tank masses (Eq. 13)
-m_empty_ox_tank_kg = material_density_ox_kgm3 * (pi * (r_ox_tank_m^2 - (r_ox_tank_m - t_cyl_ox_m)^2)*l_cyl_ox_m + 4*pi/3 * (r_ox_tank_m^3 - (r_ox_tank_m - t_caps_ox_m)^3)); % [kg] Mass of the empty LOX tank
-m_empty_fuel_tank_kg = material_density_fuel_kgm3 * (pi * (r_fuel_tank_m^2 - (r_fuel_tank_m - t_cyl_fuel_m)^2)*l_cyl_fuel_m + 4*pi/3 * (r_fuel_tank_m^3 - (r_fuel_tank_m - t_caps_ox_m)^3)); % [kg] Mass of the empty Fuel tank
+% Calculate empty tank masses 
+m_empty_ox_tank_kg = material_density_ox_kgm3 * (pi * (r_ox_tank_m^2 - (r_ox_tank_m - t_cyl_ox_m)^2)*l_cyl_ox_m + (2/3)*pi * (r_ox_tank_m^3 - (r_ox_tank_m - t_cyl_ox_m)^3)); % [kg] Mass of the empty LOX tank
+m_empty_fuel_tank_kg = material_density_fuel_kgm3 * (pi * (r_fuel_tank_m^2 - (r_fuel_tank_m - t_cyl_fuel_m)^2)*l_cyl_fuel_m + (2/3)*pi * (r_fuel_tank_m^3 - (r_fuel_tank_m - t_cyl_fuel_m)^3)); % [kg] Mass of the empty Fuel tank
 
 % --- 2.3 - Pressurant System Sizing --- 
 
@@ -155,31 +151,43 @@ m_pressurant_gas_kg = n_total_mol * pressurant_molar_mass_kgmol; % [kg] Total Ma
 % Calculate internal volume of pressurant storage tank (Eq. 17)
 v_pressurant_tank_internal_m3 = (n_total_mol * r_universal_jmolk * pressurant_temp_k) / p_storage_pressurant_pa; % [m^3] Internal volume of the high-pressure storage tank
 
-% Calculate internal radius of spherical pressurant tank (Eq. 18)
-r_pressurant_tank_internal_m = ((3 * v_pressurant_tank_internal_m3) / (4 * pi))^(1/3); % [m] Internal radius of the pressurant tank
-
 % Calculate wall thickness of spherical pressurant tank (Eq. 19)
 p_design_pressurant_pa = p_storage_pressurant_pa * safety_factor; % [Pa] Design pressure for pressurant tank
-t_pressurant_tank_m = (p_design_pressurant_pa * r_pressurant_tank_internal_m) / (2 * material_allowable_stress_pressurant_pa * joint_efficiency_pressurant_tank) + corrosion_allowance_m; % [m] Wall thickness of pressurant tank
+% Define outer and liner radii based on the allowed diameter
+r_pressurant_outer_m = d_pressurant_tank_allowed_m / 2;
+r_pressurant_liner_outer_m = r_pressurant_outer_m - t_liner_m;
 
-% Calculate mass of empty pressurant tank (Eq. 20)
-v_shell_pressurant_m3 = (4/3) * pi * ((r_pressurant_tank_internal_m + t_liner_m + t_pressurant_tank_m)^3 - (r_pressurant_tank_internal_m + t_liner_m)^3); % [m^3] Volume of the tank material
-v_shell_liner_m3 = (4/3) * pi * ((r_pressurant_tank_internal_m + t_liner_m)^3 - (r_pressurant_tank_internal_m )^3); % [m^3] Volume of the tank liner material
-m_empty_pressurant_tank_kg = material_density_pressurant_kgm3 * v_shell_pressurant_m3 + material_density_liner_kgm3 * v_shell_liner_m3; % [kg] Mass of the empty pressurant tank
+% Calculate wall thickness using hoop stress formula for a cylinder
+% We use the liner's outer radius for this calculation
+t_pressurant_tank_m = (p_design_pressurant_pa * r_pressurant_liner_outer_m) / (material_allowable_stress_pressurant_pa * joint_efficiency_pressurant_tank) + corrosion_allowance_m; % [m] Wall thickness
 
-% Calculate pressurant tank outer diameter
-d_pressurant_tank_outer_m = 2 * (r_pressurant_tank_internal_m + t_liner_m + t_pressurant_tank_m);     % [m] Outer diameter of pressurant tank
+% Calculate the final internal radius of the pressure vessel
+r_pressurant_internal_m = r_pressurant_liner_outer_m - t_pressurant_tank_m;
 
-if d_pressurant_tank_outer_m > d_pressurant_tank_allowed_m
-    warning('Outer diameter of pressurant COPV exceeds maximum allowed diameter. COPV converted to cylinder.');
+% Calculate the internal volume of the two 2:1 ellipsoidal end caps
+v_caps_pressurant_m3 = (2/3) * pi * r_pressurant_internal_m^3;
+
+% Calculate the required volume and length of the cylindrical section
+v_cyl_pressurant_m3 = v_pressurant_tank_internal_m3 - v_caps_pressurant_m3;
+if v_cyl_pressurant_m3 < 0
+    warning('Pressurant tank volume is too small; the end caps alone provide more volume than required. Consider a smaller diameter or spherical tank.');
+    l_cyl_pressurant_m = 0; % Set length to zero if caps are sufficient
+    v_cyl_pressurant_m3 = 0;
+else
+    l_cyl_pressurant_m = v_cyl_pressurant_m3 / (pi * r_pressurant_internal_m^2); % [m] Length of cylindrical portion
 end
 
-% Change pressurant tank to cylinder if outer diameter too large
-if d_pressurant_tank_outer_m > d_pressurant_tank_allowed_m
-    t_pressurant_tank_m = (p_design_pressurant_pa * (r_pressurant_tank_internal_m + t_liner_m)) / (material_allowable_stress_pressurant_pa * joint_efficiency_pressurant_tank) + corrosion_allowance_m; % [m] Wall thickness of pressurant tank
-    l_cyl_pressurant_m = (v_pressurant_tank_internal_m3 - 4*pi/3*(r_pressurant_tank_allowed_m - t_liner_m - t_pressurant_tank_m)^3)/(pi * (r_pressurant_tank_allowed_m - t_liner_m - t_pressurant_tank_m)^2); % [m] Length of cylindrical portion of pressurant tank
-    m_empty_pressurant_tank_kg = 4*pi/3*(material_density_pressurant_kgm3 * (r_pressurant_tank_allowed_m^3 - (r_pressurant_tank_allowed_m - t_pressurant_tank_m)^3) + material_density_liner_kgm3 * ((r_pressurant_tank_allowed_m - t_pressurant_tank_m)^3 - (r_pressurant_tank_allowed_m - t_pressurant_tank_m - t_liner_m)^3)) + pi*(material_density_pressurant_kgm3*(r_pressurant_tank_allowed_m^2 - (r_pressurant_tank_allowed_m - t_pressurant_tank_m)^2) + material_density_liner_kgm3*((r_pressurant_tank_allowed_m - t_pressurant_tank_m)^2 - (r_pressurant_tank_allowed_m - t_pressurant_tank_m - t_liner_m)^2)) * l_cyl_pressurant_m; % [kg] Mass of the empty pressurant tank 
-end
+% Calculate the mass of the empty pressurant tank (COPV)
+% Mass = (Volume of Carbon Fiber Shell + Volume of Liner) * Respective Densities
+m_shell_cyl_material = pi * (r_pressurant_outer_m^2 - r_pressurant_liner_outer_m^2) * l_cyl_pressurant_m;
+m_shell_caps_material = (2/3)*pi * (r_pressurant_outer_m^3 - r_pressurant_liner_outer_m^3);
+m_liner_cyl_material = pi * (r_pressurant_liner_outer_m^2 - r_pressurant_internal_m^2) * l_cyl_pressurant_m;
+m_liner_caps_material = (2/3)*pi * (r_pressurant_liner_outer_m^3 - r_pressurant_internal_m^3);
+
+m_empty_pressurant_tank_kg = material_density_pressurant_kgm3 * (m_shell_cyl_material + m_shell_caps_material) + material_density_liner_kgm3 * (m_liner_cyl_material + m_liner_caps_material);
+
+% Calculate pressurant tank outer diameter and length for geometry stackup
+d_pressurant_tank_outer_m = 2 * r_pressurant_outer_m;
 
 % --- 2.4 - Vehicle Mass Buildup ---
 m_total_kg = m_empty_ox_tank_kg + m_empty_fuel_tank_kg + m_ox_kg + m_fuel_kg + m_empty_pressurant_tank_kg + m_pressurant_gas_kg + m_plumbing_kg + m_misc_kg; % [kg] Total vehicle liftoff mass
@@ -193,10 +201,7 @@ delta_v_ms = i_sp_s * g_earth_ms2 * log(m_total_kg / m_final_kg);               
 % These calculations are performed here for use in the validation section.
 l_ox_tank_total_m = l_cyl_ox_m + d_ox_tank_m; % [m] Length of Lox cylinder + 2*radius of caps
 l_fuel_tank_total_m = l_cyl_fuel_m + d_fuel_tank_m; % [m] Length of Lox cylinder + 2*radius of caps
-l_pressurant_tank_total_m = d_pressurant_tank_outer_m;
-if d_pressurant_tank_outer_m > d_pressurant_tank_allowed_m
-    l_pressurant_tank_total_m = l_cyl_pressurant_m + d_pressurant_tank_allowed_m;
-end
+l_pressurant_tank_total_m = l_cyl_pressurant_m + (d_pressurant_tank_outer_m / 2); % Length of cylinder + combined height of two 2:1 ellipsoidal caps
 % NOTE: This is a simplified length sum. A real stackup would be more complex.
 l_total_vehicle_m = l_ox_tank_total_m + l_fuel_tank_total_m + l_pressurant_tank_total_m; % Add other lengths later (engine, avionics, etc.)
 
@@ -294,8 +299,10 @@ fprintf('--- Tank Geometry ---\n');
 fprintf('LOX Total Tank Length:         %8.3f m\n', l_ox_tank_total_m);
 fprintf('Fuel Total Tank Length:        %8.3f m\n', l_fuel_tank_total_m);
 fprintf('Pressurant Total Tank Cyl. Length:        %8.3f m\n', l_pressurant_tank_total_m);
-fprintf('Pressurant Tank Int. Radius:  %8.3f m\n', r_pressurant_tank_internal_m);
-fprintf('Pressurant Tank Wall Thick:   %8.4f m (%5.2f mm)\n\n', t_pressurant_tank_m, t_pressurant_tank_m*1000);
+fprintf('Pressurant Tank Int. Radius:  %8.3f m\n', r_pressurant_internal_m);
+fprintf('Pressurant Tank Wall Thick:   %8.4f m (%5.2f mm)\n', t_pressurant_tank_m, t_pressurant_tank_m*1000);
+fprintf('Pressurant Tank Out. Radius:  %8.3f m\n\n', r_pressurant_outer_m);
+
 
 % --- Performance Analysis ---
 fprintf('--- Performance ---\n');
