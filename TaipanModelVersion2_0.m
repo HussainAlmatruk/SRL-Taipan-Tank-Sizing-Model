@@ -8,7 +8,7 @@ This script performs a trade study for the design of the propellant and
 pressurant tanks for the Taipan liquid rocket engine.
 
 Authors: Hussain Almatruk, Jonathan Forte
-Last Updated: 10/21/2025
+Last Updated: 10/22/2025
 ---------------------------------------------------------------------------
 %}
 
@@ -197,17 +197,17 @@ velocity_ms = zeros(size(t));      % [m/s] Pre-allocate velocity array
 acceleration_ms2 = zeros(size(t));  % [m/s^2] Pre-allocate acceleration array
 f_drag_n = zeros(size(t));        % [N] Pre-allocate drag force array
 thrust_n = zeros(size(t)); thrust_n(t<=t_burn_s) = f_thrust_n;  % [N] Make thrust array (should be zero after burnout)
-m_total_sim = m_total_kg - m_dot_total_kgs .* t .* (thrust_n>0); m_total_sim(t>t_burn_s) = m_final_kg; % [kg] Array of vehicle total mass over time
+m_total_sim_kg = m_total_kg - m_dot_total_kgs .* t .* (thrust_n>0); m_total_sim_kg(t>t_burn_s) = m_final_kg; % [kg] Array of vehicle total mass over time
 dt_s = t(2) - t(1);   % [s] time step
 area_cross_m2 = pi * (D/2)^2;   % [m^2] Vehicle cross-sectional area
 
 % Step through time to calculate altitue, velocity, and acceleration through time
 for n = 2:max(size(t))
-    velocity_ms(n) = velocity_ms(n-1) + acceleration_ms2(n-1) * dt_s;                       % [m/s] Velocity array
-    altitude_m(n) = altitude_m(n-1) + velocity_ms(n-1) * dt_s;                           % [m] Altitude array
-    [~,~,~,rho_kgm3,~,~] = atmosisa(altitude_m(n));                                    % [kg/m^3] Air density at current altitude
-    f_drag_n(n) = - 0.5 * rho_kgm3 * C_D * area_cross_m2 * velocity_ms(n) * abs(velocity_ms(n));         % [N] Vehicle drag
-    acceleration_ms2(n) = (thrust_n(n) + f_drag_n(n)) / m_total_sim(n) - g_earth_ms2;   % [m/s^2] Vehicle acceleration
+    velocity_ms(n) = velocity_ms(n-1) + acceleration_ms2(n-1) * dt_s;                                   % [m/s] Velocity array
+    altitude_m(n) = altitude_m(n-1) + velocity_ms(n-1) * dt_s;                                          % [m] Altitude array
+    [~,~,~,rho_kgm3,~,~] = atmosisa(altitude_m(n));                                                     % [kg/m^3] Air density at current altitude
+    f_drag_n(n) = - 0.5 * rho_kgm3 * C_D * area_cross_m2 * velocity_ms(n) * abs(velocity_ms(n));        % [N] Vehicle drag
+    acceleration_ms2(n) = (thrust_n(n) + f_drag_n(n)) / m_total_sim_kg(n) - g_earth_ms2;                   % [m/s^2] Vehicle acceleration
 % end the simulation if the rocket reaches the ground
 if altitude_m(n) < 0
     break
@@ -218,7 +218,7 @@ h_max_m = max(altitude_m);                                          % [m] Estima
 f_drag_max_n = max(f_drag_n);                                       % [N] Maximum drag force
 maxq_pa = f_drag_max_n/(C_D * area_cross_m2);                                      % [Pa] Maximum dynamic pressure
 
-end_of_flight = find(altitude_m(10:end)==0,1,'first'); % [~] Time step when flight ends (used for plotting)
+end_of_flight_event = find(altitude_m(10:end)==0,1,'first'); % [~] Time step when flight ends (used for plotting)
 
 % --- 2.6 - Validation and Error Checks ---
 % This section implements the checks defined in the technical plan.
