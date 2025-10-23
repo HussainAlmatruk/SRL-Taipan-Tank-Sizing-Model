@@ -218,7 +218,7 @@ h_max_m = max(altitude_m);                                          % [m] Estima
 f_drag_max_n = max(f_drag_n);                                       % [N] Maximum drag force
 maxq_pa = f_drag_max_n/(C_D * area_cross_m2);                                      % [Pa] Maximum dynamic pressure
 
-endofflight = find(altitude_m(10:end)==0,1,'first'); % [~] Time step when flight ends (used for plotting)
+end_of_flight = find(altitude_m(10:end)==0,1,'first'); % [~] Time step when flight ends (used for plotting)
 
 % --- 2.6 - Validation and Error Checks ---
 % This section implements the checks defined in the technical plan.
