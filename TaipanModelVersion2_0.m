@@ -224,7 +224,7 @@ l_total_vehicle_m = l_ox_tank_total_m + l_fuel_tank_total_m + l_pressurant_tank_
 
 
 %% 3.0 - MODEL PHASES OF FLIGHT
-% This section contains time-dependant simulations, e.g., the flight sim.
+% This section contains time-dependant simulations, AKA the flight sim.
 
 % --- 3.1 - 1D Flight Simulation ---
 t = 0:0.001:120;                % [s] Time interval and step to analyze
