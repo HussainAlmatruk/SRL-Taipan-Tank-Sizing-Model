@@ -8,7 +8,7 @@ This script performs a trade study for the design of the propellant and
 pressurant tanks for the Taipan liquid rocket engine.
 
 Authors: Hussain Almatruk, Jonathan Forte
-Last Updated: 10/22/2025
+Last Updated: 11/02/2025
 ---------------------------------------------------------------------------
 %}
 
@@ -46,7 +46,6 @@ pressurant_temp_k = 294;                    % %%% TEMPORARY VALUE %%% [K] Temper
 
 %Vehicle outer diameter is now the primary input
 d_vehicle_outer_m = 6*2.54/100;           % [m] Outer diameter of the vehicle airframe
-C_D = 0.5;                                  %  %%% TEMPORARY VALUE %%% [unitless] Vehicle drag coefficient
 wall_thickness_m = 0.2*2.54/100;            % [m] Vehicle airframe wall thickness
 inner_clearance_m = 0.1*2.54/100;           % [m] Clearance between tank and vehicle inner wall
 
@@ -63,6 +62,12 @@ material_density_liner_kgm3             = 2840;     % %%% TEMPORARY VALUE %%%  [
 t_liner_m                                 = 0.003;    % %%% TEMPORARY VALUE %%%  [m] Thickness of COPV liner 
 material_density_pressurant_kgm3        = 1800;     % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value
 material_allowable_stress_pressurant_pa = 3.5e9;    % %%% TEMPORARY VALUE %%%  [Pa] TODO: Define this value
+
+% Vehicle Aerodynamic Properties
+rasaero_data = readtable("RASAero_CD_data.CSV");                % %%% TEMPORARY VALUES %%% [~] Load in vehicle aerodynamic data from RASAero
+rasaero_data_0_AoA = rasaero_data(rasaero_data.Alpha == 0,:); rasaero_data_0_AoA = rasaero_data_0_AoA(1:end-1,:);  % [~] Seperate out data for 0 degree angle of attack (also trim to be same size as 4 deg array)
+rasaero_data_2_AoA = rasaero_data(rasaero_data.Alpha == 2,:); rasaero_data_2_AoA = rasaero_data_2_AoA(1:end-1,:);   % [~] Seperate out data for 2 degree angle of attack (also trim to be same size as 4 deg array)
+rasaero_data_4_AoA = rasaero_data(rasaero_data.Alpha == 4,:);   % [~] Seperate out data for 4 degree angle of attack
 
 % --- 1.4 Design Margins & Factors ---
 
@@ -230,6 +235,7 @@ l_total_vehicle_m = l_ox_tank_total_m + l_fuel_tank_total_m + l_pressurant_tank_
 t = 0:0.001:120;                % [s] Time interval and step to analyze
 altitude_m = zeros(size(t));      % [m] Pre-allocate altitude array
 velocity_ms = zeros(size(t));      % [m/s] Pre-allocate velocity array
+vehicle_mach= zeros(size(t));      % [m/s] Pre-allocate mach number array 
 acceleration_ms2 = zeros(size(t));  % [m/s^2] Pre-allocate acceleration array
 f_drag_n = zeros(size(t));        % [N] Pre-allocate drag force array
 thrust_n = zeros(size(t)); thrust_n(t<=t_burn_s) = f_thrust_n;  % [N] Make thrust array (should be zero after burnout)
@@ -241,7 +247,9 @@ area_cross_m2 = pi * (d_vehicle_outer_m/2)^2;   % [m^2] Vehicle cross-sectional 
 for n = 2:max(size(t))
     velocity_ms(n) = velocity_ms(n-1) + acceleration_ms2(n-1) * dt_s;                                   % [m/s] Velocity array
     altitude_m(n) = altitude_m(n-1) + velocity_ms(n-1) * dt_s;                                          % [m] Altitude array
-    [~,~,~,rho_kgm3,~,~] = atmosisa(altitude_m(n));                                                     % [kg/m^3] Get atmospheric density at current altitude using ISA model
+    [~,v_mach1_ms,~,rho_kgm3,~,~] = atmosisa(altitude_m(n));                                            % [kg/m^3] Get atmospheric density and speed of sound at current altitude using ISA model
+    vehicle_mach(n) = velocity_ms(n)./v_mach1_ms;                                                       % [unitless] Calculate mach number
+    C_D = interp1(rasaero_data_0_AoA.Mach, rasaero_data_0_AoA.CD, vehicle_mach(n),"linear","extrap");   % [unitless] Calculate current C_D as a function of mach number and angle of attack
     f_drag_n(n) = - 0.5 * rho_kgm3 * C_D * area_cross_m2 * velocity_ms(n) * abs(velocity_ms(n));        % [N] Vehicle drag (using v*abs(v) to ensure drag always opposes velocity)
     acceleration_ms2(n) = (thrust_n(n) + f_drag_n(n)) / m_total_sim_kg(n) - g_earth_ms2;                % [m/s^2] Vehicle acceleration
 % end the simulation if the rocket reaches the ground
