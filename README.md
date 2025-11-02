@@ -29,7 +29,7 @@ The script is organized into sequential blocks for clear organization and mainta
 - **`%% 2.0 - CALCULATIONS`**: This section will contain all the engineering equations.
 - **`%% 3.0 - MODEL PHASES OF FLIGHT`**: Contains time-dependant simulations, AKA the flight sim.
 - **`%% 4.0 - VALIDATION AND CHECKS`**:  This section implements the checks defined in the technical plan.
-- **`5.0 - OUTPUTS`**:  displays the final calculated values in a clean format.
+- **`%% 5.0 - OUTPUTS`**:  displays the final calculated values in a clean format.
 
 ## How to Use This Repository
 
