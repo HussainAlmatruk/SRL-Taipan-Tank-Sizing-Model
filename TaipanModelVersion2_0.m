@@ -43,40 +43,41 @@ pressurant_temp_k = 294;                    % %%% TEMPORARY VALUE %%% [K] Temper
 
 % --- 1.3 Vehicle Geometry & Materials ---
 % Assumption: Both LOX and Fuel tanks are cylinders of the same diameter
-d_ox_tank_m     = 6*2.54/100;               %  %%% TEMPORARY VALUE %%% [m] Outer diameter of the LOX tank
-d_fuel_tank_m   = 6*2.54/100;               %  %%% TEMPORARY VALUE %%% [m] Outer diameter of the Fuel tank
-d_pressurant_tank_allowed_m = 6*2.54/100;   %  %%% TEMPORARY VALUE %%% [m] Maximum allowed outer diameter of the Pressurant tank
-C_D = 0.5;                                  %  %%% TEMPORARY VALUE %%% [~] Vehicle drag coefficient
 
-wall_thickness_m = 0.2*2.54/100;           % [m] Vehicle airframe wall thickness
-inner_clearance_m = 0.1*2.54/100;          % [m] Clearance between tank and vehicle inner wall
+%Vehicle outer diameter is now the primary input
+d_vehicle_outer_m = 6*2.54/100;           % [m] Outer diameter of the vehicle airframe
+C_D = 0.5;                                  %  %%% TEMPORARY VALUE %%% [unitless] Vehicle drag coefficient
+wall_thickness_m = 0.2*2.54/100;            % [m] Vehicle airframe wall thickness
+inner_clearance_m = 0.1*2.54/100;           % [m] Clearance between tank and vehicle inner wall
 
 % Material Properties for LOX Tank 
 material_density_ox_kgm3         = 2840;      % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value
-material_allowable_stress_ox_pa  = 2.90*10^8; % %%% TEMPORARY VALUE %%%  [Pa] TODO: Define this value
+material_allowable_stress_ox_pa  = 2.90e8;    % %%% TEMPORARY VALUE %%%  [Pa] TODO: Define this value
 
 % Material Properties for Fuel Tank 
-material_density_fuel_kgm3       = 2840; % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value
-material_allowable_stress_fuel_pa= 2.90*10^8; % %%% TEMPORARY VALUE %%%  [Pa] TODO: Define this value
+material_density_fuel_kgm3       = 2840;      % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value
+material_allowable_stress_fuel_pa= 2.90e8;    % %%% TEMPORARY VALUE %%%  [Pa] TODO: Define this value
 
 % Material Properties for Pressurant Tank 
 material_density_liner_kgm3             = 2840;     % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value
 t_liner_m                                 = 0.003;    % %%% TEMPORARY VALUE %%%  [m] Thickness of COPV liner 
 material_density_pressurant_kgm3        = 1800;     % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value
-material_allowable_stress_pressurant_pa = 3.5*10^9; % %%% TEMPORARY VALUE %%%  [Pa] TODO: Define this value
+material_allowable_stress_pressurant_pa = 3.5e9;    % %%% TEMPORARY VALUE %%%  [Pa] TODO: Define this value
 
 % --- 1.4 Design Margins & Factors ---
+
 safety_factor   = 1.5;        % [unitless] Safety factor for pressure vessels
 % Joint efficiency can differ based on tank material and welding process
 joint_efficiency_ox_tank        = 0.8; % %%% TEMPORARY VALUE %%%  [unitless] TODO: Define this value 
 joint_efficiency_fuel_tank      = 0.8; % %%% TEMPORARY VALUE %%%  [unitless] TODO: Define this value 
-joint_efficiency_pressurant_tank= 0.8; % %%% TEMPORARY VALUE %%%  [unitless] TODO: Define this value 
+joint_efficiency_pressurant_tank= 0.8; % %%% TEMPORARY VALUE %%%  [unitless] TODO: Define this value
 
 corrosion_allowance_m = 0.001;       % %%% TEMPORARY VALUE %%%  [m] Extra thickness for material degradation
 ullage_fraction_ox       = 0.2;      % %%% TEMPORARY VALUE %%%  [unitless] Percent of empty volume in tanks (e.g., 0.1 for 10%)
 ullage_fraction_fuel     = 0.1;      % %%% TEMPORARY VALUE %%%  [unitless] Percent of empty volume in tanks (e.g., 0.1 for 10%)
 
 % --- 1.5 Estimated Masses (Non-Calculated) ---
+
 m_misc_kg     = 25; % [kg]  %%% TEMPORARY VALUE %%% TODO: Estimate mass of payload, structure, fins, avionics, recovery
 m_plumbing_kg = 10; % [kg]  %%% TEMPORARY VALUE %%% TODO: Estimate mass of valves and plumbing
 
@@ -101,12 +102,16 @@ m_fuel_kg = m_dot_fuel_kgs *t_burn_s/(1-residual_fraction);   % [kg] Total mass 
 
 % --- 2.2 - Tank Sizing & Mass ---
 
-% Find the largest tank diameter
-largest_tank_diameter = max([d_ox_tank_m, d_fuel_tank_m, d_pressurant_tank_allowed_m]); % [m] Find the largest outer diameter among all tanks to size the airframe
+% Calculate vehicle inner diameter and the available diameter for tanks
+d_vehicle_inner_m = d_vehicle_outer_m - 2*wall_thickness_m; % [m] Vehicle inner diameter
+d_tank_outer_m = d_vehicle_inner_m - 2*inner_clearance_m;    % [m] Max available outer diameter for tanks
 
-% Calculate vehicle dimensions based on inputs
-d_vehicle_inner_m = largest_tank_diameter + 2*inner_clearance_m;  % [m] Calculate vehicle inner diameter based on largest tank + bilateral clearance
-d_vehicle_outer_m = d_vehicle_inner_m + 2*wall_thickness_m;         % [m] Calculate vehicle outer diameter based on inner diameter + bilateral wall thickness
+% Assign the calculated diameter to all tanks
+d_ox_tank_m     = d_tank_outer_m;             % [m] Outer diameter of the LOX tank
+d_fuel_tank_m   = d_tank_outer_m;             % [m] Outer diameter of the Fuel tank
+d_pressurant_tank_allowed_m = d_tank_outer_m; % [m] Max allowed outer diameter for the Pressurant tank
+
+% The rest of your calculations that depend on these diameters would follow...
 
 % Calculate Volume of Props (Eq. 5)
 v_ox_m3 = m_ox_kg/ox_density_kgm3;          % [m^3] Volume of liquid oxidizer
@@ -286,6 +291,18 @@ end
 %% 5.0 - OUTPUTS
 % This section displays the final calculated values in a clean format.
 
+% --- Pre-Output Calculations & Conversions ---
+% Conversion factors for display
+m_to_in = 39.3701;
+m_to_ft = 3.28084;
+m_to_mm = 1000;
+
+% Calculate inner diameters and total wall thicknesses for display
+d_ox_tank_inner_m = d_ox_tank_m - 2 * t_cyl_ox_m;
+d_fuel_tank_inner_m = d_fuel_tank_m - 2 * t_cyl_fuel_m;
+d_pressurant_tank_inner_m = 2 * r_pressurant_internal_m;
+t_pressurant_total_m = r_pressurant_outer_m - r_pressurant_internal_m; % Total thickness (composite + liner)
+
 fprintf('====================================================\n');
 fprintf('      Taipan Vehicle Mass & Tank Design Results     \n');
 fprintf('====================================================\n\n');
@@ -306,14 +323,32 @@ fprintf('------------------------------------------\n');
 fprintf('Dry Mass (Final):             %8.2f kg\n', m_final_kg);
 fprintf('Wet Mass (Liftoff):           %8.2f kg\n\n', m_total_kg);
 
-% --- Tank Geometry ---
-fprintf('--- Tank Geometry ---\n');
-fprintf('LOX Total Tank Length:         %8.3f m\n', l_ox_tank_total_m);
-fprintf('Fuel Total Tank Length:        %8.3f m\n', l_fuel_tank_total_m);
-fprintf('Pressurant Total Tank Cyl. Length:        %8.3f m\n', l_pressurant_tank_total_m);
-fprintf('Pressurant Tank Int. Radius:  %8.3f m\n', r_pressurant_internal_m);
-fprintf('Pressurant Tank Wall Thick:   %8.4f m (%5.2f mm)\n', t_pressurant_tank_m, t_pressurant_tank_m*1000);
-fprintf('Pressurant Tank Out. Radius:  %8.3f m\n\n', r_pressurant_outer_m);
+% --- Tank & Vehicle Geometry ---
+fprintf('--- Tank & Vehicle Geometry ---\n\n');
+
+fprintf('--- LOX Tank ---\n');
+fprintf('Outer Diameter:  %8.4f m  (%8.2f in)  (%8.2f ft)\n', d_ox_tank_m, d_ox_tank_m*m_to_in, d_ox_tank_m*m_to_ft);
+fprintf('Inner Diameter:  %8.4f m  (%8.2f in)  (%8.2f ft)\n', d_ox_tank_inner_m, d_ox_tank_inner_m*m_to_in, d_ox_tank_inner_m*m_to_ft);
+fprintf('Wall Thickness:  %8.4f m  (%8.2f mm)  (%8.3f in)\n', t_cyl_ox_m, t_cyl_ox_m*m_to_mm, t_cyl_ox_m*m_to_in);
+fprintf('Total Length:    %8.4f m  (%8.2f in)  (%8.2f ft)\n', l_ox_tank_total_m, l_ox_tank_total_m*m_to_in, l_ox_tank_total_m*m_to_ft);
+fprintf('Total Mass:      %8.2f kg\n\n', m_empty_ox_tank_kg + m_ox_kg);
+
+fprintf('--- Fuel Tank ---\n');
+fprintf('Outer Diameter:  %8.4f m  (%8.2f in)  (%8.2f ft)\n', d_fuel_tank_m, d_fuel_tank_m*m_to_in, d_fuel_tank_m*m_to_ft);
+fprintf('Inner Diameter:  %8.4f m  (%8.2f in)  (%8.2f ft)\n', d_fuel_tank_inner_m, d_fuel_tank_inner_m*m_to_in, d_fuel_tank_inner_m*m_to_ft);
+fprintf('Wall Thickness:  %8.4f m  (%8.2f mm)  (%8.3f in)\n', t_cyl_fuel_m, t_cyl_fuel_m*m_to_mm, t_cyl_fuel_m*m_to_in);
+fprintf('Total Length:    %8.4f m  (%8.2f in)  (%8.2f ft)\n', l_fuel_tank_total_m, l_fuel_tank_total_m*m_to_in, l_fuel_tank_total_m*m_to_ft);
+fprintf('Total Mass:      %8.2f kg\n\n', m_empty_fuel_tank_kg + m_fuel_kg);
+
+fprintf('--- Pressurant Tank (COPV) ---\n');
+fprintf('Outer Diameter:  %8.4f m  (%8.2f in)  (%8.2f ft)\n', d_pressurant_tank_outer_m, d_pressurant_tank_outer_m*m_to_in, d_pressurant_tank_outer_m*m_to_ft);
+fprintf('Inner Diameter:  %8.4f m  (%8.2f in)  (%8.2f ft)\n', d_pressurant_tank_inner_m, d_pressurant_tank_inner_m*m_to_in, d_pressurant_tank_inner_m*m_to_ft);
+fprintf('Wall Thickness:  %8.4f m  (%8.2f mm)  (%8.3f in)\n', t_pressurant_total_m, t_pressurant_total_m*m_to_mm, t_pressurant_total_m*m_to_in);
+fprintf('Total Length:    %8.4f m  (%8.2f in)  (%8.2f ft)\n', l_pressurant_tank_total_m, l_pressurant_tank_total_m*m_to_in, l_pressurant_tank_total_m*m_to_ft);
+fprintf('Total Mass:      %8.2f kg\n\n', m_empty_pressurant_tank_kg + m_pressurant_gas_kg);
+
+fprintf('--- Total Component Stackup ---\n');
+fprintf('Total Length:    %8.4f m  (%8.2f in)  (%8.2f ft)\n\n', l_total_vehicle_m, l_total_vehicle_m*m_to_in, l_total_vehicle_m*m_to_ft);
 
 % --- Performance Analysis ---
 fprintf('--- Performance ---\n');
