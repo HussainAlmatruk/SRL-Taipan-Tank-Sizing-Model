@@ -23,10 +23,10 @@ r_universal_jmolk   = 8.3145;      % [J/(mol*K)] Universal gas constant
 %% 1.0 - INPUTS
 
 % --- 1.1 Engine & Performance ---
-f_thrust_n      = 750*4.44822;  % [N] Engine thrust
-i_sp_s          = 287.458;      % [s] Specific impulse
-t_burn_s        = 10;           % [s] Total burn time
-o_f_ratio       = 2.5;          % [unitless] Oxidizer-to-Fuel mass ratio
+f_thrust_n      = 1200*4.44822;     % [N] Engine thrust
+i_sp_s          = 245;              % [s] Specific impulse
+t_burn_s        = 9;                % [s] Total burn time
+o_f_ratio       = 2.3;              % [unitless] Oxidizer-to-Fuel mass ratio
 
 % --- 1.2 Propellants & Pressurant ---
 ox_density_kgm3   = 1141;                   % [kg/m^3] Density of Liquid Oxygen
@@ -34,8 +34,8 @@ fuel_density_kgm3 = 820;                    % [kg/m^3] Density of Jet-A
 pressurant_molar_mass_kgmol = 0.0280134;    % [kg/mol] Molar mass of Nitrogen (N2)
 residual_fraction = 0.1;                    % %%% TEMPORARY VALUE %%% [~] Percentage of fuel left over in tank after burnout
 
-p_op_ox_tank_pa = 850*6894.76;              % %%% TEMPORARY VALUE %%% [Pa] Operating pressure of LOX tank TODO: Define this value
-p_op_fuel_tank_pa = 850*6894.76;            % %%% TEMPORARY VALUE %%% [Pa] Operating pressure of Fuel tank TODO: Define this value
+p_op_ox_tank_pa = 950*6894.76;              % %%% TEMPORARY VALUE %%% [Pa] Operating pressure of LOX tank TODO: Define this value
+p_op_fuel_tank_pa = 950*6894.76;            % %%% TEMPORARY VALUE %%% [Pa] Operating pressure of Fuel tank TODO: Define this value
 p_storage_pressurant_pa = 3000*6894.76;     % %%% TEMPORARY VALUE %%% [Pa] The pressure the Nitrogen is stored in dedicated tank (MEOP). TODO: Define this value
 ox_temp_k         = 90;                     % %%% TEMPORARY VALUE %%% [K] Temperature of LOX in tank TODO: Define this value
 fuel_temp_k       = 294;                    % %%% TEMPORARY VALUE %%% [K] Temperature of Jet-A in tank (Ambient probably)
@@ -45,9 +45,9 @@ pressurant_temp_k = 294;                    % %%% TEMPORARY VALUE %%% [K] Temper
 % Assumption: Both LOX and Fuel tanks are cylinders of the same diameter
 
 %Vehicle outer diameter is now the primary input
-d_vehicle_outer_m = 6*2.54/100;           % [m] Outer diameter of the vehicle airframe
-wall_thickness_m = 0.2*2.54/100;            % [m] Vehicle airframe wall thickness
-inner_clearance_m = 0.1*2.54/100;           % [m] Clearance between tank and vehicle inner wall
+d_tank_outer_m = 6.625*2.54/100;          % [m] Tank outer diameter
+wall_thickness_m = 0*2.54/100;            % [m] Vehicle airframe wall thickness
+inner_clearance_m = 0*2.54/100;           % [m] Clearance between tank and vehicle inner wall
 
 % Material Properties for LOX Tank 
 material_density_ox_kgm3         = 2840;      % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value
@@ -59,9 +59,9 @@ material_allowable_stress_fuel_pa= 2.90e8;    % %%% TEMPORARY VALUE %%%  [Pa] TO
 
 % Material Properties for Pressurant Tank 
 material_density_liner_kgm3             = 2840;     % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value
-t_liner_m                                 = 0.003;    % %%% TEMPORARY VALUE %%%  [m] Thickness of COPV liner 
-material_density_pressurant_kgm3        = 1800;     % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value
-material_allowable_stress_pressurant_pa = 3.5e9;    % %%% TEMPORARY VALUE %%%  [Pa] TODO: Define this value
+t_liner_m                                 = 0;      % %%% TEMPORARY VALUE %%%  [m] Thickness of COPV liner 
+material_density_pressurant_kgm3        = 8000;     % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value
+material_allowable_stress_pressurant_pa = 4.15e8;    % %%% TEMPORARY VALUE %%%  [Pa] TODO: Define this value
 
 % Vehicle Aerodynamic Properties
 rasaero_data = readtable("RASAero_CD_data.CSV");                % %%% TEMPORARY VALUES %%% [~] Load in vehicle aerodynamic data from RASAero
@@ -84,7 +84,7 @@ ullage_fraction_fuel     = 0.1;      % %%% TEMPORARY VALUE %%%  [unitless] Perce
 % --- 1.5 Estimated Masses (Non-Calculated) ---
 
 m_misc_kg     = 25; % [kg]  %%% TEMPORARY VALUE %%% TODO: Estimate mass of payload, structure, fins, avionics, recovery
-m_plumbing_kg = 10; % [kg]  %%% TEMPORARY VALUE %%% TODO: Estimate mass of valves and plumbing
+m_plumbing_kg = 20; % [kg]  %%% TEMPORARY VALUE %%% TODO: Estimate mass of valves and plumbing
 
 % --- 1.6 Design Constraints ---
 
@@ -108,8 +108,7 @@ m_fuel_kg = m_dot_fuel_kgs *t_burn_s/(1-residual_fraction);   % [kg] Total mass 
 % --- 2.2 - Tank Sizing & Mass ---
 
 % Calculate vehicle inner diameter and the available diameter for tanks
-d_vehicle_inner_m = d_vehicle_outer_m - 2*wall_thickness_m; % [m] Vehicle inner diameter
-d_tank_outer_m = d_vehicle_inner_m - 2*inner_clearance_m;    % [m] Max available outer diameter for tanks
+d_vehicle_outer_m = d_tank_outer_m + 2*wall_thickness_m + 2*inner_clearance_m;           % [m] Outer diameter of the vehicle airframe
 
 % Assign the calculated diameter to all tanks
 d_ox_tank_m     = d_tank_outer_m;             % [m] Outer diameter of the LOX tank
@@ -174,16 +173,14 @@ v_pressurant_tank_internal_m3 = (n_total_mol * r_universal_jmolk * pressurant_te
 % Calculate wall thickness of spherical pressurant tank (Eq. 19)
 p_design_pressurant_pa = p_storage_pressurant_pa * safety_factor; % [Pa] Design pressure for pressurant tank
 
-% Define outer and liner radii based on the allowed diameter
+% Define inner and outer and liner radii based on the allowed diameter
 r_pressurant_outer_m = d_pressurant_tank_allowed_m / 2; % [m] Outer radius of the pressurant tank (based on allowed diameter)
-r_pressurant_liner_outer_m = r_pressurant_outer_m - t_liner_m; % [m] Outer radius of the COPV liner
+r_pressurant_internal_m = -(p_design_pressurant_pa*r_pressurant_outer_m/(material_allowable_stress_pressurant_pa * joint_efficiency_pressurant_tank) - r_pressurant_outer_m + t_liner_m + corrosion_allowance_m);   % [m] Final internal radius of the pressurant tank (inside the liner)
+r_pressurant_liner_outer_m = r_pressurant_internal_m + t_liner_m; % [m] Outer radius of the COPV liner
 
 % Calculate wall thickness using hoop stress formula for a cylinder
 % We use the liner's outer radius for this calculation
-t_pressurant_tank_m = (p_design_pressurant_pa * r_pressurant_liner_outer_m) / (material_allowable_stress_pressurant_pa * joint_efficiency_pressurant_tank) + corrosion_allowance_m; % [m] Wall thickness
-
-% Calculate the final internal radius of the pressure vessel
-r_pressurant_internal_m = r_pressurant_liner_outer_m - t_pressurant_tank_m; % [m] Final internal radius of the pressurant tank (inside the liner)
+t_pressurant_tank_m = (p_design_pressurant_pa * r_pressurant_outer_m) / (material_allowable_stress_pressurant_pa * joint_efficiency_pressurant_tank) + corrosion_allowance_m; % [m] Wall thickness
 
 % Calculate the internal volume of the two 2:1 ellipsoidal end caps
 v_caps_pressurant_m3 = (2/3) * pi * r_pressurant_internal_m^3; % [m^3] Combined internal volume of the two 2:1 ellipsoidal end caps
