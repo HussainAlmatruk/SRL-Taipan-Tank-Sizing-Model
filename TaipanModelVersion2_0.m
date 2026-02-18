@@ -47,16 +47,16 @@ pressurant_temp_k = 294;                    % [K] Temperature of pressurant gas 
 prescribe_t = 0;        % [unitless] 1 - Prescribe tank thicknesses, 0 - calculate optimal tank thickness
 
 if prescribe_t                                  % If prescribe t is active, prescribe tank thicknesses
-    t_cyl_ox_m = 0.226*2.54/100;                % [m] LOX tank cylinder thickness
-    t_cyl_fuel_m = 0.226*2.54/100;              % [m] Fuel tank cylinder thickness
-    t_pressurant_tank_m = 0.318*2.54/100;       % [m] Pressurant tank wall thickness
+    t_cyl_ox_m = 0.216*2.54/100;                % [m] LOX tank cylinder thickness
+    t_cyl_fuel_m = 0.216*2.54/100;              % [m] Fuel tank cylinder thickness
+    t_pressurant_tank_m = 0.3*2.54/100;       % [m] Pressurant tank wall thickness
 end
 
 % --- 1.4 Vehicle Geometry & Materials ---
 % Assumption: Both LOX and Fuel tanks are cylinders of the same diameter
 
 %Vehicle outer diameter is now the primary input
-d_tank_outer_m = 4.5*2.54/100;          % [m] Tank outer diameter
+d_tank_outer_m = 3.5*2.54/100;          % [m] Tank outer diameter
 wall_thickness_m = 0*2.54/100;            % [m] Vehicle airframe shell wall thickness
 inner_clearance_m = 0*2.54/100;           % [m] Clearance between tank and airframe shell inner wall
 
@@ -88,7 +88,7 @@ joint_efficiency_ox_tank        = 0.8; % %%% TEMPORARY VALUE %%%  [unitless] TOD
 joint_efficiency_fuel_tank      = 0.8; % %%% TEMPORARY VALUE %%%  [unitless] TODO: Define this value 
 joint_efficiency_pressurant_tank= 0.8; % %%% TEMPORARY VALUE %%%  [unitless] TODO: Define this value
 
-corrosion_allowance_m = 0.001;       % %%% TEMPORARY VALUE %%%  [m] Extra thickness for material degradation
+corrosion_allowance_m = 0.0001;       % %%% TEMPORARY VALUE %%%  [m] Extra thickness for material degradation
 ullage_fraction_ox       = 0.2;      % %%% TEMPORARY VALUE %%%  [unitless] Percent of empty volume in tanks (e.g., 0.1 for 10%)
 ullage_fraction_fuel     = 0.1;      % %%% TEMPORARY VALUE %%%  [unitless] Percent of empty volume in tanks (e.g., 0.1 for 10%)
 
@@ -224,7 +224,7 @@ d_pressurant_tank_outer_m = 2 * r_pressurant_outer_m; % [m] Final outer diameter
 
 % --- 2.4 - Vehicle Mass Buildup ---
 % m_total_kg = m_empty_ox_tank_kg + m_empty_fuel_tank_kg + m_ox_kg + m_fuel_kg + m_empty_pressurant_tank_kg + m_pressurant_gas_kg + m_plumbing_kg + m_misc_kg; % [kg] Total vehicle liftoff mass
-m_total_kg = m_empty_ox_tank_kg + m_empty_fuel_tank_kg + m_ox_kg + m_fuel_kg + m_empty_pressurant_tank_kg + m_pressurant_gas_kg + 2*(m_empty_ox_tank_kg + m_empty_fuel_tank_kg + m_empty_pressurant_tank_kg); % [kg] Total vehicle liftoff mass
+m_total_kg = m_empty_ox_tank_kg + m_empty_fuel_tank_kg + m_ox_kg + m_fuel_kg + m_empty_pressurant_tank_kg + m_pressurant_gas_kg + 1*(m_empty_ox_tank_kg + m_empty_fuel_tank_kg + m_empty_pressurant_tank_kg); % [kg] Total vehicle liftoff mass
 m_final_kg = m_total_kg - (1 - residual_fraction) * (m_ox_kg + m_fuel_kg); % [kg] Final mass after propellant is consumed
 
 % --- 2.5 - Static Performance Metrics ---
