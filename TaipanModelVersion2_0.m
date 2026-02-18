@@ -44,7 +44,7 @@ fuel_temp_k       = 294;                    % [K] Temperature of Jet-A in tank (
 pressurant_temp_k = 294;                    % [K] Temperature of pressurant gas in its tank  (Ambient temperature)
 
 % --- 1.3 Tank Construction Properties ---
-prescribe_t = 1;        % [unitless] 1 - Prescribe tank thicknesses, 0 - calculate optimal tank thickness
+prescribe_t = 0;        % [unitless] 1 - Prescribe tank thicknesses, 0 - calculate optimal tank thickness
 
 if prescribe_t                                  % If prescribe t is active, prescribe tank thicknesses
     t_cyl_ox_m = 0.226*2.54/100;                % [m] LOX tank cylinder thickness
@@ -56,7 +56,7 @@ end
 % Assumption: Both LOX and Fuel tanks are cylinders of the same diameter
 
 %Vehicle outer diameter is now the primary input
-d_tank_outer_m = 4*2.54/100;          % [m] Tank outer diameter
+d_tank_outer_m = 4.5*2.54/100;          % [m] Tank outer diameter
 wall_thickness_m = 0*2.54/100;            % [m] Vehicle airframe shell wall thickness
 inner_clearance_m = 0*2.54/100;           % [m] Clearance between tank and airframe shell inner wall
 
@@ -94,8 +94,8 @@ ullage_fraction_fuel     = 0.1;      % %%% TEMPORARY VALUE %%%  [unitless] Perce
 
 % --- 1.6 Estimated Masses (Non-Calculated) ---
 
-% m_misc_kg     = 25; % [kg]  %%% TEMPORARY VALUE %%% TODO: Estimate mass of payload, structure, fins, avionics, recovery
-% m_plumbing_kg = 20; % [kg]  %%% TEMPORARY VALUE %%% TODO: Estimate mass of valves and plumbing
+m_misc_kg     = 25; % [kg]  %%% TEMPORARY VALUE %%% TODO: Estimate mass of payload, structure, fins, avionics, recovery
+m_plumbing_kg = 20; % [kg]  %%% TEMPORARY VALUE %%% TODO: Estimate mass of valves and plumbing
 
 % --- 1.7 Design Constraints ---
 
