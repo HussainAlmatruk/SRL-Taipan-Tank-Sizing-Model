@@ -138,7 +138,7 @@ twr_minimum_ratio = 5; % [ratio] Thrust to Weight ratio
 
 % --- 1.8 Vehicle Aerodynamic Properties ---
 
-rasaero_data = readtable("RASAero_CD_data.CSV");                % %%% TEMPORARY VALUES %%% [~] Load in vehicle aerodynamic data from RASAero
+rasaero_data = readtable("4in_RASAero_CD_data.CSV");                % %%% TEMPORARY VALUES %%% [~] Load in vehicle aerodynamic data from RASAero
 rasaero_data_0_AoA = rasaero_data(rasaero_data.Alpha == 0,:); rasaero_data_0_AoA = rasaero_data_0_AoA(1:end-1,:);  % [~] Seperate out data for 0 degree angle of attack (also trim to be same size as 4 deg array)
 rasaero_data_2_AoA = rasaero_data(rasaero_data.Alpha == 2,:); rasaero_data_2_AoA = rasaero_data_2_AoA(1:end-1,:);   % [~] Seperate out data for 2 degree angle of attack (also trim to be same size as 4 deg array)
 rasaero_data_4_AoA = rasaero_data(rasaero_data.Alpha == 4,:);   % [~] Seperate out data for 4 degree angle of attack
