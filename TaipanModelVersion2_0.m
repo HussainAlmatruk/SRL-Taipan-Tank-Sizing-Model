@@ -86,8 +86,8 @@ pressurant_temp_k = 294;                    % %%% TEMPORARY VALUE %%% [K] Temper
 % --- 1.3 Vehicle Geometry & Materials ---
 % Assumption: Both LOX and Fuel tanks are cylinders of the same diameter
 
-%Vehicle outer diameter is now the primary input
-d_tank_outer_m = 4*IN_TO_M;          % [m] Tank outer diameter
+% Tank outer diameter is the primary input
+d_tank_outer_m = 4*IN_TO_M;               % [m] Tank outer diameter
 wall_thickness_m = 0*2.54/100;            % [m] Vehicle airframe wall thickness
 inner_clearance_m = 0*2.54/100;           % [m] Clearance between tank and vehicle inner wall
 
