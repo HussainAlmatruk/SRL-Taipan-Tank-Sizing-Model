@@ -8,7 +8,7 @@ This script performs a trade study for the design of the propellant and
 pressurant tanks for the Taipan liquid rocket engine.
 
 Authors: Hussain Almatruk, Jonathan Forte
-Last Updated: 11/02/2025
+Last Updated: 02/23/2026
 ---------------------------------------------------------------------------
 %}
 
@@ -78,7 +78,7 @@ residual_fraction = 0.1;                    % %%% TEMPORARY VALUE %%% [~] Percen
 
 p_op_ox_tank_pa = 8000 * 1000;              % [Pa] Operating pressure of LOX tank (Updated from 8000 kPa)
 p_op_fuel_tank_pa = 5050 * 1000;            % [Pa] Operating pressure of Fuel tank (Updated from 5050 kPa)
-p_storage_pressurant_pa = 3000*PSI_TO_PA;     % [Pa] The pressure the Nitrogen is stored in dedicated tank (MEOP). TODO: Define this value
+p_storage_pressurant_pa = 3000 * PSI_TO_PA;     % [Pa] The pressure the Nitrogen is stored in dedicated tank (MEOP). TODO: Define this value
 ox_temp_k         = 90;                     % %%% TEMPORARY VALUE %%% [K] Temperature of LOX in tank TODO: Define this value
 fuel_temp_k       = 294;                    % %%% TEMPORARY VALUE %%% [K] Temperature of Jet-A in tank (Ambient probably)
 pressurant_temp_k = 294;                    % %%% TEMPORARY VALUE %%% [K] Temperature of pressurant gas in its tank
@@ -102,14 +102,8 @@ material_allowable_stress_fuel_pa= 2.90e8;    % %%% TEMPORARY VALUE %%%  [Pa] TO
 % Material Properties for Pressurant Tank 
 material_density_liner_kgm3             = 2840;     % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value
 t_liner_m                                 = 0;      % %%% TEMPORARY VALUE %%%  [m] Thickness of COPV liner 
-material_density_pressurant_kgm3        = 8000;     % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value
-material_allowable_stress_pressurant_pa = 4.15e8;    % %%% TEMPORARY VALUE %%%  [Pa] TODO: Define this value
-
-% Vehicle Aerodynamic Properties
-rasaero_data = readtable("RASAero_CD_data.CSV");                % %%% TEMPORARY VALUES %%% [~] Load in vehicle aerodynamic data from RASAero
-rasaero_data_0_AoA = rasaero_data(rasaero_data.Alpha == 0,:); rasaero_data_0_AoA = rasaero_data_0_AoA(1:end-1,:);  % [~] Seperate out data for 0 degree angle of attack (also trim to be same size as 4 deg array)
-rasaero_data_2_AoA = rasaero_data(rasaero_data.Alpha == 2,:); rasaero_data_2_AoA = rasaero_data_2_AoA(1:end-1,:);   % [~] Seperate out data for 2 degree angle of attack (also trim to be same size as 4 deg array)
-rasaero_data_4_AoA = rasaero_data(rasaero_data.Alpha == 4,:);   % [~] Seperate out data for 4 degree angle of attack
+material_density_pressurant_kgm3        = 2700;     % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value
+material_allowable_stress_pressurant_pa = 250e6;    % %%% TEMPORARY VALUE %%%  [Pa] TODO: Define this value
 
 % --- 1.4 Design Margins & Factors ---
 
@@ -132,6 +126,13 @@ m_plumbing_kg = 20; % [kg]  %%% TEMPORARY VALUE %%% TODO: Estimate mass of valve
 
 l_airframe_max_m = 3.048; %[m] Maximum allowable vehicle length
 twr_minimum_ratio = 5; % [ratio] Thrust to Weight ratio
+
+% --- 1.7 Vehicle Aerodynamic Properties ---
+
+rasaero_data = readtable("RASAero_CD_data.CSV");                % %%% TEMPORARY VALUES %%% [~] Load in vehicle aerodynamic data from RASAero
+rasaero_data_0_AoA = rasaero_data(rasaero_data.Alpha == 0,:); rasaero_data_0_AoA = rasaero_data_0_AoA(1:end-1,:);  % [~] Seperate out data for 0 degree angle of attack (also trim to be same size as 4 deg array)
+rasaero_data_2_AoA = rasaero_data(rasaero_data.Alpha == 2,:); rasaero_data_2_AoA = rasaero_data_2_AoA(1:end-1,:);   % [~] Seperate out data for 2 degree angle of attack (also trim to be same size as 4 deg array)
+rasaero_data_4_AoA = rasaero_data(rasaero_data.Alpha == 4,:);   % [~] Seperate out data for 4 degree angle of attack
 
 %% 2.0 - CALCULATIONS
 % This section should not be modified unless equations are being updated or the initial code is done and is now being itirated on to optimize values
