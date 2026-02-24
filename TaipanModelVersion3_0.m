@@ -1,0 +1,77 @@
+%{
+---------------------------------------------------------------------------
+CU Sounding Rocket Lab - Liquid Propulsion Team
+Tank Sizing and Vehicle Mass Model
+
+Description:
+This script performs a trade study for the design of the propellant and
+pressurant tanks for the Taipan liquid rocket engine. Modular functions
+stored in the V3_Files folder perform each major calculation stage. The
+main script is responsible for calling functions in the correct order and
+passing outputs between them. All inputs live in getInputs.m and all
+physical constants and unit conversions live in getConstants.m.
+
+Authors: Hussain Almatruk, Jonathan Forte
+Last Updated: 02/24/2026
+Version: 3.0
+---------------------------------------------------------------------------
+%}
+
+%% 0.0 - SETUP
+% Clears workspace, command window, and closes all figures.
+clear; clc; close all;
+addpath('V3_Files');    % Add the V3_Files folder to the MATLAB search path so all functions can be found
+
+%% 1.0 - CONSTANTS & INPUTS
+% Constants and inputs are loaded from their dedicated functions.
+% To change a physical constant or unit conversion, edit getConstants.m.
+% To change a design input or parameter, edit getInputs.m.
+
+C = getConstants();     % [struct] All physical constants and unit conversion factors
+P = getInputs(C);       % [struct] All vehicle and design input parameters
+
+%% 2.0 - CALCULATIONS
+% This section should not be modified unless equations are being updated or the initial code is done and is now being itirated on to optimize values
+
+% --- 2.1 - Mass & Sizing (Propellants, All Tanks, Vehicle Mass & Geometry) ---
+% All mass and sizing calculations are performed in one function call.
+% See calcMassAndSizing.m for the internal breakdown and equation references.
+[m_dot_total_kgs, m_dot_ox_kgs, m_dot_fuel_kgs,                          ...
+ m_ox_kg, m_fuel_kg,                                                       ...
+ d_vehicle_outer_m, d_ox_tank_m, d_fuel_tank_m,                           ...
+ t_cyl_ox_m, t_cyl_fuel_m,                                                 ...
+ v_total_ox_tank_m3, v_total_fuel_tank_m3,                                 ...
+ l_cyl_ox_m, l_cyl_fuel_m,                                                 ...
+ m_empty_ox_tank_kg, m_empty_fuel_tank_kg,                                 ...
+ m_pressurant_gas_kg, d_pressurant_tank_outer_m,                           ...
+ r_pressurant_outer_m, r_pressurant_internal_m,                            ...
+ t_pressurant_tank_m, l_cyl_pressurant_m,                                  ...
+ m_empty_pressurant_tank_kg, m_misc_and_plumbing_kg,                       ...
+ l_ox_tank_total_m, l_fuel_tank_total_m, l_pressurant_tank_total_m,       ...
+ l_total_vehicle_m,                                                         ...
+ m_total_kg, m_final_kg, twr_ratio, delta_v_ms] = calcMassAndSizing(P, C);
+
+%% 3.0 - MODEL PHASES OF FLIGHT
+% This section contains time-dependant simulations, AKA the flight sim.
+
+% --- 3.1 - 1D Flight Simulation ---
+[h_max_m, f_drag_max_n, maxq_pa, altitude_m, velocity_ms, end_of_flight_event] = runFlightSimulation( ...
+    m_total_kg, m_final_kg, m_dot_total_kgs, d_vehicle_outer_m, P, C);
+
+%% 4.0 - OUTPUTS & VALIDATION
+% Validation checks run at the top of displayResults. Any warnings are
+% printed at the bottom of the output block.
+displayResults( ...
+    m_ox_kg, m_fuel_kg, m_pressurant_gas_kg,                                           ...
+    m_empty_ox_tank_kg, m_empty_fuel_tank_kg, m_empty_pressurant_tank_kg,              ...
+    m_misc_and_plumbing_kg, m_final_kg, m_total_kg,                                    ...
+    d_ox_tank_m, t_cyl_ox_m, l_ox_tank_total_m,                                       ...
+    d_fuel_tank_m, t_cyl_fuel_m, l_fuel_tank_total_m,                                 ...
+    d_pressurant_tank_outer_m, r_pressurant_internal_m, r_pressurant_outer_m,          ...
+    t_pressurant_tank_m, l_pressurant_tank_total_m,                                    ...
+    l_total_vehicle_m, twr_ratio, delta_v_ms, f_drag_max_n, maxq_pa, h_max_m,         ...
+    l_cyl_ox_m, l_cyl_fuel_m, P, C);
+
+%% 5.0 - TEST SECTION
+% you can use this section temporarly to test that github works for you and the changes you make are actually working
+
