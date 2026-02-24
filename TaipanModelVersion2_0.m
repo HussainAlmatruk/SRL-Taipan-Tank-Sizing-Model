@@ -8,7 +8,7 @@ This script performs a trade study for the design of the propellant and
 pressurant tanks for the Taipan liquid rocket engine.
 
 Authors: Hussain Almatruk, Jonathan Forte
-Last Updated: 2/18/2026
+Last Updated: 02/23/2026
 ---------------------------------------------------------------------------
 %}
 
@@ -20,67 +20,92 @@ clear; clc; close all;
 g_earth_ms2         = 9.80665;       % [m/s^2] Standard gravitational acceleration
 r_universal_jmolk   = 8.3145;      % [J/(mol*K)] Universal gas constant
 
+%  UNIT CONVERSION FACTORS
+
+% --- Length ---
+FT_TO_M = 0.3048;
+M_TO_FT = 3.28084;
+IN_TO_M = 0.0254;
+M_TO_IN = 39.3701;
+M_TO_MM = 1000;
+MM_TO_M = 0.001;
+
+% --- Mass ---
+LBM_TO_KG = 0.453592;
+KG_TO_LBM = 2.20462;
+
+% --- Force ---
+LBF_TO_N = 4.44822;
+N_TO_LBF = 0.224809;
+
+% --- Pressure ---
+PSI_TO_PA = 6894.76;
+PA_TO_PSI = 0.000145038;
+ATM_TO_PA = 101325;
+PA_TO_ATM = 9.86923e-6;
+BAR_TO_PA = 100000;
+PA_TO_BAR = 1e-5;
+
+% --- Temperature ---
+% Note: These are for differences, not absolute temperatures
+% For absolute: T_K = T_C + 273.15, T_R = T_F + 459.67
+C_TO_K_OFFSET = 273.15;
+F_TO_R_OFFSET = 459.67;
+
+% --- Angle ---
+DEG_TO_RAD = pi / 180;
+RAD_TO_DEG = 180 / pi;
+
+% --- Velocity ---
+KPH_TO_MS = 1/3.6;
+MS_TO_KPH = 3.6;
+MPH_TO_MS = 0.44704;
+MS_TO_MPH = 2.23694;
+
 %% 1.0 - INPUTS
 
 % --- 1.1 Engine & Performance ---
-f_thrust_n      = 750*4.44822;      % [N] Engine thrust
-i_sp_s          = 287;              % [s] Specific impulse
-t_burn_s        = 10;               % [s] Total burn time
-o_f_ratio       = 2.5;              % [unitless] Oxidizer-to-Fuel mass ratio
-m_dot_ox_kgs    = 0.774;            % [kg/s] Oxidizer mass flow rate 
-m_dot_fuel_kgs  = 0.324;            % [kg/s] Fuel mass flow rate 
+f_thrust_n      = 2891.34;          % [N] Engine thrust (Updated)
+i_sp_s          = 291.29;           % [s] Specific impulse (Derived from new Thrust and Mass Flow)
+t_burn_s        = 9;                % [s] Total burn time
+o_f_ratio       = 2.3;              % [unitless] Oxidizer-to-Fuel mass ratio
 
 % --- 1.2 Propellants & Pressurant ---
 ox_density_kgm3   = 1141;                   % [kg/m^3] Density of Liquid Oxygen
 fuel_density_kgm3 = 820;                    % [kg/m^3] Density of Jet-A
 pressurant_molar_mass_kgmol = 0.0280134;    % [kg/mol] Molar mass of Nitrogen (N2)
-residual_fraction = 0;                      % %%% TEMPORARY VALUE %%% [~] Percentage of propellant left over in tank after burnout
+residual_fraction = 0.1;                    % %%% TEMPORARY VALUE %%% [~] Percentage of fuel left over in tank after burnout
 
-p_op_ox_tank_pa = 1000*6894.76;              % %%% TEMPORARY VALUE %%% [Pa] Operating pressure of LOX tank TODO: Define this value
-p_op_fuel_tank_pa = 1000*6894.76;            % %%% TEMPORARY VALUE %%% [Pa] Operating pressure of Fuel tank TODO: Define this value
-p_storage_pressurant_pa = 3000*6894.76;     % %%% TEMPORARY VALUE %%% [Pa] The pressure the Nitrogen is stored in dedicated tank (MEOP). TODO: Define this value
-ox_temp_k         = 90;                     % [K] Temperature of LOX in tank
-fuel_temp_k       = 294;                    % [K] Temperature of Jet-A in tank (Ambient temperature)
-pressurant_temp_k = 294;                    % [K] Temperature of pressurant gas in its tank  (Ambient temperature)
+p_op_ox_tank_pa = 8000 * 1000;              % [Pa] Operating pressure of LOX tank (Updated from 8000 kPa)
+p_op_fuel_tank_pa = 5050 * 1000;            % [Pa] Operating pressure of Fuel tank (Updated from 5050 kPa)
+p_storage_pressurant_pa = 3000 * PSI_TO_PA;     % [Pa] The pressure the Nitrogen is stored in dedicated tank (MEOP). TODO: Define this value
+ox_temp_k         = 90;                     % %%% TEMPORARY VALUE %%% [K] Temperature of LOX in tank TODO: Define this value
+fuel_temp_k       = 294;                    % %%% TEMPORARY VALUE %%% [K] Temperature of Jet-A in tank (Ambient probably)
+pressurant_temp_k = 294;                    % %%% TEMPORARY VALUE %%% [K] Temperature of pressurant gas in its tank
 
-% --- 1.3 Tank Construction Properties ---
-prescribe_t = 0;        % [unitless] 1 - Prescribe tank thicknesses, 0 - calculate optimal tank thickness
-
-if prescribe_t                                  % If prescribe t is active, prescribe tank thicknesses
-    t_cyl_ox_m = 0.216*2.54/100;                % [m] LOX tank cylinder thickness
-    t_cyl_fuel_m = 0.216*2.54/100;              % [m] Fuel tank cylinder thickness
-    t_pressurant_tank_m = 0.3*2.54/100;       % [m] Pressurant tank wall thickness
-end
-
-% --- 1.4 Vehicle Geometry & Materials ---
+% --- 1.3 Vehicle Geometry & Materials ---
 % Assumption: Both LOX and Fuel tanks are cylinders of the same diameter
 
-%Vehicle outer diameter is now the primary input
-d_tank_outer_m = 3.5*2.54/100;          % [m] Tank outer diameter
-wall_thickness_m = 0*2.54/100;            % [m] Vehicle airframe shell wall thickness
-inner_clearance_m = 0*2.54/100;           % [m] Clearance between tank and airframe shell inner wall
+% Tank outer diameter is the primary input
+d_tank_outer_m = 4*IN_TO_M;               % [m] Tank outer diameter
+wall_thickness_m = 0*2.54/100;            % [m] Vehicle airframe wall thickness
+inner_clearance_m = 0*2.54/100;           % [m] Clearance between tank and vehicle inner wall
 
 % Material Properties for LOX Tank 
-material_density_ox_kgm3         = 2700;      % [kg/m^3] Density of oxidizer tank material - Aluminum 6061 T6 
-material_allowable_stress_ox_pa  = 2.76e8;    % [Pa] Tensile yield strength of oxidizer tank material (Aluminum 6061 T6)
+material_density_ox_kgm3         = 2840;      % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value
+material_allowable_stress_ox_pa  = 2.90e8;    % %%% TEMPORARY VALUE %%%  [Pa] TODO: Define this value
 
 % Material Properties for Fuel Tank 
-material_density_fuel_kgm3       = 2700;      % [kg/m^3] Density of fuel tank material - Aluminum 6061 T6 
-material_allowable_stress_fuel_pa= 2.76e8;    % [Pa] Tensile yield strength of fuel tank material (Aluminum 6061 T6)
+material_density_fuel_kgm3       = 2840;      % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value
+material_allowable_stress_fuel_pa= 2.90e8;    % %%% TEMPORARY VALUE %%%  [Pa] TODO: Define this value
 
 % Material Properties for Pressurant Tank 
-material_density_liner_kgm3             = 2700;     % [kg/m^3] [kg/m^3] Density of COPV pressurant tank inner liner (ignore for non-COPV)
-t_liner_m                                 = 0;      % [m] Thickness of COPV inner liner (0 for non-COPV)
-material_density_pressurant_kgm3        = 2700;     % [kg/m^3] Density of pressurant tank material - Aluminum 6061 T6 
-material_allowable_stress_pressurant_pa = 2.76e8;   % [Pa] Tensile yield strength of pressurant tank material (Aluminum 6061 T6)
+material_density_liner_kgm3             = 2840;     % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value
+t_liner_m                                 = 0;      % %%% TEMPORARY VALUE %%%  [m] Thickness of COPV liner 
+material_density_pressurant_kgm3        = 2700;     % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value
+material_allowable_stress_pressurant_pa = 250e6;    % %%% TEMPORARY VALUE %%%  [Pa] TODO: Define this value
 
-% Vehicle Aerodynamic Properties
-rasaero_data = readtable("RASAero_CD_data.CSV");                % %%% TEMPORARY VALUES %%% [~] Load in vehicle aerodynamic data from RASAero
-rasaero_data_0_AoA = rasaero_data(rasaero_data.Alpha == 0,:); rasaero_data_0_AoA = rasaero_data_0_AoA(1:end-1,:);  % [~] Seperate out data for 0 degree angle of attack (also trim to be same size as 4 deg array)
-rasaero_data_2_AoA = rasaero_data(rasaero_data.Alpha == 2,:); rasaero_data_2_AoA = rasaero_data_2_AoA(1:end-1,:);   % [~] Seperate out data for 2 degree angle of attack (also trim to be same size as 4 deg array)
-rasaero_data_4_AoA = rasaero_data(rasaero_data.Alpha == 4,:);   % [~] Seperate out data for 4 degree angle of attack
-
-% --- 1.5 Design Margins & Factors ---
+% --- 1.4 Design Margins & Factors ---
 
 safety_factor   = 1.5;        % [unitless] Safety factor for pressure vessels
 % Joint efficiency can differ based on tank material and welding process
@@ -88,30 +113,36 @@ joint_efficiency_ox_tank        = 0.8; % %%% TEMPORARY VALUE %%%  [unitless] TOD
 joint_efficiency_fuel_tank      = 0.8; % %%% TEMPORARY VALUE %%%  [unitless] TODO: Define this value 
 joint_efficiency_pressurant_tank= 0.8; % %%% TEMPORARY VALUE %%%  [unitless] TODO: Define this value
 
-corrosion_allowance_m = 0.0001;       % %%% TEMPORARY VALUE %%%  [m] Extra thickness for material degradation
+corrosion_allowance_m = 0.001;       % %%% TEMPORARY VALUE %%%  [m] Extra thickness for material degradation
 ullage_fraction_ox       = 0.2;      % %%% TEMPORARY VALUE %%%  [unitless] Percent of empty volume in tanks (e.g., 0.1 for 10%)
 ullage_fraction_fuel     = 0.1;      % %%% TEMPORARY VALUE %%%  [unitless] Percent of empty volume in tanks (e.g., 0.1 for 10%)
 
-% --- 1.6 Estimated Masses (Non-Calculated) ---
+% --- 1.5 Estimated Masses (Non-Calculated) ---
 
 m_misc_kg     = 25; % [kg]  %%% TEMPORARY VALUE %%% TODO: Estimate mass of payload, structure, fins, avionics, recovery
 m_plumbing_kg = 20; % [kg]  %%% TEMPORARY VALUE %%% TODO: Estimate mass of valves and plumbing
 
-% --- 1.7 Design Constraints ---
+% --- 1.6 Design Constraints ---
 
 l_airframe_max_m = 3.048; %[m] Maximum allowable vehicle length
 twr_minimum_ratio = 5; % [ratio] Thrust to Weight ratio
+
+% --- 1.7 Vehicle Aerodynamic Properties ---
+
+rasaero_data = readtable("6in_RASAero_CD_data.CSV");                % %%% TEMPORARY VALUES %%% [~] Load in vehicle aerodynamic data from RASAero
+rasaero_data_0_AoA = rasaero_data(rasaero_data.Alpha == 0,:); rasaero_data_0_AoA = rasaero_data_0_AoA(1:end-1,:);  % [~] Seperate out data for 0 degree angle of attack (also trim to be same size as 4 deg array)
+rasaero_data_2_AoA = rasaero_data(rasaero_data.Alpha == 2,:); rasaero_data_2_AoA = rasaero_data_2_AoA(1:end-1,:);   % [~] Seperate out data for 2 degree angle of attack (also trim to be same size as 4 deg array)
+rasaero_data_4_AoA = rasaero_data(rasaero_data.Alpha == 4,:);   % [~] Seperate out data for 4 degree angle of attack
 
 %% 2.0 - CALCULATIONS
 % This section should not be modified unless equations are being updated or the initial code is done and is now being itirated on to optimize values
 
 % --- 2.1 - Propellant & Flow Rate Analysis ---
 
-% % Calculate Prop Mass Flow Rates (Eq. 1,2,3)
-% m_dot_total_kgs = f_thrust_n/(i_sp_s*g_earth_ms2);          % [kg/s] Total propellant mass flow rate
-% m_dot_ox_kgs = m_dot_total_kgs*(o_f_ratio/(1+o_f_ratio));   % [kg/s] Oxidizer mass flow rate 
-% m_dot_fuel_kgs = m_dot_total_kgs/(1+o_f_ratio);             % [kg/s] Fuel mass flow rate 
-m_dot_total_kgs = m_dot_ox_kgs + m_dot_fuel_kgs;              % [kg/s] Total propellant mass flow rate
+% Calculate Prop Mass Flow Rates (Eq. 1,2,3)
+m_dot_total_kgs = f_thrust_n/(i_sp_s*g_earth_ms2);          % [kg/s] Total propellant mass flow rate
+m_dot_ox_kgs = m_dot_total_kgs*(o_f_ratio/(1+o_f_ratio));   % [kg/s] Oxidizer mass flow rate 
+m_dot_fuel_kgs = m_dot_total_kgs/(1+o_f_ratio);             % [kg/s] Fuel mass flow rate 
 
 % Calculate Prop Masses (Eq. 4)
 m_ox_kg = m_dot_ox_kgs*t_burn_s/(1-residual_fraction);        % [kg] Total mass of oxidizer
@@ -122,7 +153,7 @@ m_fuel_kg = m_dot_fuel_kgs *t_burn_s/(1-residual_fraction);   % [kg] Total mass 
 % Calculate vehicle inner diameter and the available diameter for tanks
 d_vehicle_outer_m = d_tank_outer_m + 2*wall_thickness_m + 2*inner_clearance_m;           % [m] Outer diameter of the vehicle airframe
 
-% Assign the diameter to all tanks
+% Assign the calculated diameter to all tanks
 d_ox_tank_m     = d_tank_outer_m;             % [m] Outer diameter of the LOX tank
 d_fuel_tank_m   = d_tank_outer_m;             % [m] Outer diameter of the Fuel tank
 d_pressurant_tank_allowed_m = d_tank_outer_m; % [m] Max allowed outer diameter for the Pressurant tank
@@ -147,10 +178,8 @@ p_design_ox_pa = p_op_ox_tank_pa * safety_factor;     % [Pa] Design pressure for
 p_design_fuel_pa = p_op_fuel_tank_pa * safety_factor; % [Pa] Design pressure for Fuel tank
 
 % Calculate cylinder wall thicknesses (Eq. 11, ASME Hoop Stress)
-if ~prescribe_t     % calculate optimal tank wall thickness only if tank thickness is not being prescribed
-    t_cyl_ox_m = (p_design_ox_pa * d_ox_tank_m) / (2 * material_allowable_stress_ox_pa * joint_efficiency_ox_tank) + corrosion_allowance_m; % [m] LOX tank cylinder thickness
-    t_cyl_fuel_m = (p_design_fuel_pa * d_fuel_tank_m) / (2 * material_allowable_stress_fuel_pa * joint_efficiency_fuel_tank) + corrosion_allowance_m; % [m] Fuel tank cylinder thickness
-end
+t_cyl_ox_m = (p_design_ox_pa * d_ox_tank_m) / (2 * material_allowable_stress_ox_pa * joint_efficiency_ox_tank) + corrosion_allowance_m; % [m] LOX tank cylinder thickness
+t_cyl_fuel_m = (p_design_fuel_pa * d_fuel_tank_m) / (2 * material_allowable_stress_fuel_pa * joint_efficiency_fuel_tank) + corrosion_allowance_m; % [m] Fuel tank cylinder thickness
 
 % Calculate end cap volumes
 v_caps_ox_m3 = (2/3)*pi*(r_ox_tank_m - t_cyl_ox_m)^3;     % [m^3] Combined volume of the two 2:1 ellipsoidal end caps for the LOX tank
@@ -172,7 +201,7 @@ m_empty_fuel_tank_kg = material_density_fuel_kgm3 * (pi * (r_fuel_tank_m^2 - (r_
 
 % Calculate moles of pressurant required to displace propellants (Eq. 14, Ideal Gas Law)
 % Assumes pressurant gas takes the temperature in the propellant tanks
-n_ox_mol = (p_op_ox_tank_pa * v_total_ox_tank_m3) / (r_universal_jmolk * (ox_temp_k+pressurant_temp_k)/2);       % [mol] Moles of gas to displace oxidizer
+n_ox_mol = (p_op_ox_tank_pa * v_total_ox_tank_m3) / (r_universal_jmolk * ox_temp_k);       % [mol] Moles of gas to displace oxidizer
 n_fuel_mol = (p_op_fuel_tank_pa * v_total_fuel_tank_m3) / (r_universal_jmolk * fuel_temp_k); % [mol] Moles of gas to displace fuel
 
 % Calculate total moles of pressurant (Eq. 15)
@@ -189,13 +218,12 @@ p_design_pressurant_pa = p_storage_pressurant_pa * safety_factor; % [Pa] Design 
 
 % Define inner and outer and liner radii based on the allowed diameter
 r_pressurant_outer_m = d_pressurant_tank_allowed_m / 2; % [m] Outer radius of the pressurant tank (based on allowed diameter)
-% Calculate wall thickness using hoop stress formula for a cylinder
-% We use the tank's outer radius for this calculation
-if ~prescribe_t     % calculate optimal tank wall thickness only if tank thickness is not being prescribed
-    t_pressurant_tank_m = (p_design_pressurant_pa * r_pressurant_outer_m) / (material_allowable_stress_pressurant_pa * joint_efficiency_pressurant_tank) + corrosion_allowance_m; % [m] Pressurant tank wall thickness
-end
-r_pressurant_internal_m = r_pressurant_outer_m - t_pressurant_tank_m - t_liner_m;% [m] Final internal radius of the pressurant tank (inside the liner)
+r_pressurant_internal_m = -(p_design_pressurant_pa*r_pressurant_outer_m/(material_allowable_stress_pressurant_pa * joint_efficiency_pressurant_tank) - r_pressurant_outer_m + t_liner_m + corrosion_allowance_m);   % [m] Final internal radius of the pressurant tank (inside the liner)
 r_pressurant_liner_outer_m = r_pressurant_internal_m + t_liner_m; % [m] Outer radius of the COPV liner
+
+% Calculate wall thickness using hoop stress formula for a cylinder
+% We use the liner's outer radius for this calculation
+t_pressurant_tank_m = (p_design_pressurant_pa * r_pressurant_outer_m) / (material_allowable_stress_pressurant_pa * joint_efficiency_pressurant_tank) + corrosion_allowance_m; % [m] Wall thickness
 
 % Calculate the internal volume of the two 2:1 ellipsoidal end caps
 v_caps_pressurant_m3 = (2/3) * pi * r_pressurant_internal_m^3; % [m^3] Combined internal volume of the two 2:1 ellipsoidal end caps
@@ -210,8 +238,8 @@ else
     l_cyl_pressurant_m = v_cyl_pressurant_m3 / (pi * r_pressurant_internal_m^2); % [m] Length of cylindrical portion
 end
 
-% Calculate the mass of the empty pressurant tank
-% Mass = (Volume of Shell + Volume of Liner) * Respective Densities
+% Calculate the mass of the empty pressurant tank (COPV)
+% Mass = (Volume of Carbon Fiber Shell + Volume of Liner) * Respective Densities
 m_shell_cyl_material = pi * (r_pressurant_outer_m^2 - r_pressurant_liner_outer_m^2) * l_cyl_pressurant_m; % [m^3] Volume of the carbon fiber shell (cylindrical section)
 m_shell_caps_material = (2/3)*pi * (r_pressurant_outer_m^3 - r_pressurant_liner_outer_m^3); % [m^3] Volume of the carbon fiber shell (both 2:1 ellipsoidal end caps)
 m_liner_cyl_material = pi * (r_pressurant_liner_outer_m^2 - r_pressurant_internal_m^2) * l_cyl_pressurant_m; % [m^3] Volume of the liner (cylindrical section)
@@ -223,8 +251,7 @@ m_empty_pressurant_tank_kg = material_density_pressurant_kgm3 * (m_shell_cyl_mat
 d_pressurant_tank_outer_m = 2 * r_pressurant_outer_m; % [m] Final outer diameter of the pressurant tank (for stackup)
 
 % --- 2.4 - Vehicle Mass Buildup ---
-% m_total_kg = m_empty_ox_tank_kg + m_empty_fuel_tank_kg + m_ox_kg + m_fuel_kg + m_empty_pressurant_tank_kg + m_pressurant_gas_kg + m_plumbing_kg + m_misc_kg; % [kg] Total vehicle liftoff mass
-m_total_kg = m_empty_ox_tank_kg + m_empty_fuel_tank_kg + m_ox_kg + m_fuel_kg + m_empty_pressurant_tank_kg + m_pressurant_gas_kg + 1*(m_empty_ox_tank_kg + m_empty_fuel_tank_kg + m_empty_pressurant_tank_kg); % [kg] Total vehicle liftoff mass
+m_total_kg = m_empty_ox_tank_kg + m_empty_fuel_tank_kg + m_ox_kg + m_fuel_kg + m_empty_pressurant_tank_kg + m_pressurant_gas_kg + m_plumbing_kg + m_misc_kg; % [kg] Total vehicle liftoff mass
 m_final_kg = m_total_kg - (1 - residual_fraction) * (m_ox_kg + m_fuel_kg); % [kg] Final mass after propellant is consumed
 
 % --- 2.5 - Static Performance Metrics ---
