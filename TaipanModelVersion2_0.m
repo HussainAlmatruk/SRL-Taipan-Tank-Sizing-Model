@@ -382,7 +382,7 @@ fprintf('------------------------------------------\n');
 fprintf('Empty LOX Tank Mass:          %8.2f kg\n', m_empty_ox_tank_kg);
 fprintf('Empty Fuel Tank Mass:         %8.2f kg\n', m_empty_fuel_tank_kg);
 fprintf('Empty Pressurant Tank Mass:   %8.2f kg\n', m_empty_pressurant_tank_kg);
-fprintf('Plumbing & Misc Mass:         %8.2f kg\n', (m_empty_ox_tank_kg + m_empty_fuel_tank_kg + m_empty_pressurant_tank_kg);
+fprintf('Plumbing & Misc Mass:         %8.2f kg\n', (m_empty_ox_tank_kg + m_empty_fuel_tank_kg + m_empty_pressurant_tank_kg));
 fprintf('------------------------------------------\n');
 fprintf('Dry Mass (Final):             %8.2f kg\n', m_final_kg);
 fprintf('Wet Mass (Liftoff):           %8.2f kg\n\n', m_total_kg);
