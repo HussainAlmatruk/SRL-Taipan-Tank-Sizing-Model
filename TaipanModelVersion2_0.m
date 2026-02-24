@@ -20,11 +20,53 @@ clear; clc; close all;
 g_earth_ms2         = 9.80665;       % [m/s^2] Standard gravitational acceleration
 r_universal_jmolk   = 8.3145;      % [J/(mol*K)] Universal gas constant
 
+%  UNIT CONVERSION FACTORS
+
+% --- Length ---
+FT_TO_M = 0.3048;
+M_TO_FT = 3.28084;
+IN_TO_M = 0.0254;
+M_TO_IN = 39.3701;
+M_TO_MM = 1000;
+MM_TO_M = 0.001;
+
+% --- Mass ---
+LBM_TO_KG = 0.453592;
+KG_TO_LBM = 2.20462;
+
+% --- Force ---
+LBF_TO_N = 4.44822;
+N_TO_LBF = 0.224809;
+
+% --- Pressure ---
+PSI_TO_PA = 6894.76;
+PA_TO_PSI = 0.000145038;
+ATM_TO_PA = 101325;
+PA_TO_ATM = 9.86923e-6;
+BAR_TO_PA = 100000;
+PA_TO_BAR = 1e-5;
+
+% --- Temperature ---
+% Note: These are for differences, not absolute temperatures
+% For absolute: T_K = T_C + 273.15, T_R = T_F + 459.67
+C_TO_K_OFFSET = 273.15;
+F_TO_R_OFFSET = 459.67;
+
+% --- Angle ---
+DEG_TO_RAD = pi / 180;
+RAD_TO_DEG = 180 / pi;
+
+% --- Velocity ---
+KPH_TO_MS = 1/3.6;
+MS_TO_KPH = 3.6;
+MPH_TO_MS = 0.44704;
+MS_TO_MPH = 2.23694;
+
 %% 1.0 - INPUTS
 
 % --- 1.1 Engine & Performance ---
-f_thrust_n      = 1200*4.44822;     % [N] Engine thrust
-i_sp_s          = 245;              % [s] Specific impulse
+f_thrust_n      = 2891.34;          % [N] Engine thrust (Updated)
+i_sp_s          = 291.29;           % [s] Specific impulse (Derived from new Thrust and Mass Flow)
 t_burn_s        = 9;                % [s] Total burn time
 o_f_ratio       = 2.3;              % [unitless] Oxidizer-to-Fuel mass ratio
 
@@ -34,9 +76,9 @@ fuel_density_kgm3 = 820;                    % [kg/m^3] Density of Jet-A
 pressurant_molar_mass_kgmol = 0.0280134;    % [kg/mol] Molar mass of Nitrogen (N2)
 residual_fraction = 0.1;                    % %%% TEMPORARY VALUE %%% [~] Percentage of fuel left over in tank after burnout
 
-p_op_ox_tank_pa = 950*6894.76;              % %%% TEMPORARY VALUE %%% [Pa] Operating pressure of LOX tank TODO: Define this value
-p_op_fuel_tank_pa = 950*6894.76;            % %%% TEMPORARY VALUE %%% [Pa] Operating pressure of Fuel tank TODO: Define this value
-p_storage_pressurant_pa = 3000*6894.76;     % %%% TEMPORARY VALUE %%% [Pa] The pressure the Nitrogen is stored in dedicated tank (MEOP). TODO: Define this value
+p_op_ox_tank_pa = 8000 * 1000;              % [Pa] Operating pressure of LOX tank (Updated from 8000 kPa)
+p_op_fuel_tank_pa = 5050 * 1000;            % [Pa] Operating pressure of Fuel tank (Updated from 5050 kPa)
+p_storage_pressurant_pa = 3000*PSI_TO_PA;     % [Pa] The pressure the Nitrogen is stored in dedicated tank (MEOP). TODO: Define this value
 ox_temp_k         = 90;                     % %%% TEMPORARY VALUE %%% [K] Temperature of LOX in tank TODO: Define this value
 fuel_temp_k       = 294;                    % %%% TEMPORARY VALUE %%% [K] Temperature of Jet-A in tank (Ambient probably)
 pressurant_temp_k = 294;                    % %%% TEMPORARY VALUE %%% [K] Temperature of pressurant gas in its tank
