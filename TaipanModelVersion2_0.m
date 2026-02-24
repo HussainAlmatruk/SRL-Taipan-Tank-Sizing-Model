@@ -212,7 +212,7 @@ m_empty_fuel_tank_kg = material_density_fuel_kgm3 * (pi * (r_fuel_tank_m^2 - (r_
 
 % Calculate moles of pressurant required to displace propellants (Eq. 14, Ideal Gas Law)
 % Assumes pressurant gas takes the temperature in the propellant tanks
-n_ox_mol = (p_op_ox_tank_pa * v_total_ox_tank_m3) / (r_universal_jmolk * ox_temp_k);       % [mol] Moles of gas to displace oxidizer
+n_ox_mol = (p_op_ox_tank_pa * v_total_ox_tank_m3) / (r_universal_jmolk * (ox_temp_k + pressurant_temp_k)/2);       % [mol] Moles of gas to displace oxidizer
 n_fuel_mol = (p_op_fuel_tank_pa * v_total_fuel_tank_m3) / (r_universal_jmolk * fuel_temp_k); % [mol] Moles of gas to displace fuel
 
 % Calculate total moles of pressurant (Eq. 15)
