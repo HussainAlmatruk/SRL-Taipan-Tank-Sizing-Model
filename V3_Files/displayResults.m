@@ -7,7 +7,9 @@ function displayResults( ...
     d_pressurant_tank_outer_m, r_pressurant_internal_m, r_pressurant_outer_m, ...
     t_pressurant_tank_m, l_pressurant_tank_total_m,                         ...
     l_total_vehicle_m, twr_ratio, delta_v_ms, f_drag_max_n, maxq_pa, h_max_m, ...
-    l_cyl_ox_m, l_cyl_fuel_m, P, C)
+    l_cyl_ox_m, l_cyl_fuel_m,                                                          ...
+    v_ox_m3, v_fuel_m3, v_total_ox_tank_m3, v_total_fuel_tank_m3, v_pressurant_tank_m3, ...
+    P, C)
 %{
 ---------------------------------------------------------------------------
 displayResults
@@ -88,6 +90,14 @@ fprintf('Wet Mass (Liftoff):           %8.2f kg\n\n', m_total_kg);
 
 % --- Tank & Vehicle Geometry ---
 fprintf('--- Tank & Vehicle Geometry ---\n\n');
+
+% --- Volume Breakdown ---
+fprintf('--- Volume Breakdown ---\n');
+fprintf('LOX Volume (propellant only):    %8.4f m^3  (%8.2f L)\n', v_ox_m3,             v_ox_m3*1000);
+fprintf('LOX Tank Volume (with ullage):   %8.4f m^3  (%8.2f L)\n', v_total_ox_tank_m3,  v_total_ox_tank_m3*1000);
+fprintf('Fuel Volume (propellant only):   %8.4f m^3  (%8.2f L)\n', v_fuel_m3,            v_fuel_m3*1000);
+fprintf('Fuel Tank Volume (with ullage):  %8.4f m^3  (%8.2f L)\n', v_total_fuel_tank_m3, v_total_fuel_tank_m3*1000);
+fprintf('Pressurant Tank Volume:          %8.4f m^3  (%8.2f L)\n\n', v_pressurant_tank_m3, v_pressurant_tank_m3*1000);
 
 fprintf('--- LOX Tank ---\n');
 fprintf('Outer Diameter:  %8.4f m  (%8.2f in)  (%8.2f ft)\n', d_ox_tank_m, d_ox_tank_m*C.M_TO_IN, d_ox_tank_m*C.M_TO_FT);

@@ -11,7 +11,8 @@ function [m_dot_total_kgs, m_dot_ox_kgs, m_dot_fuel_kgs,                        
           m_empty_pressurant_tank_kg, m_misc_and_plumbing_kg,                       ...
           l_ox_tank_total_m, l_fuel_tank_total_m, l_pressurant_tank_total_m,       ...
           l_total_vehicle_m,                                                         ...
-          m_total_kg, m_final_kg, twr_ratio, delta_v_ms] = calcMassAndSizing(P, C)
+          m_total_kg, m_final_kg, twr_ratio, delta_v_ms, ...
+          v_ox_m3, v_fuel_m3, v_pressurant_tank_m3] = calcMassAndSizing(P, C)
 %{
 ---------------------------------------------------------------------------
 calcMassAndSizing
@@ -74,6 +75,9 @@ Outputs:
   m_final_kg                 - [kg]      Vehicle mass after propellant is consumed (dry + residuals)
   twr_ratio                  - [unitless] Liftoff Thrust-to-Weight ratio
   delta_v_ms                 - [m/s]     Ideal Tsiolkovsky delta-V
+  v_ox_m3                    - [m^3]     Volume of liquid oxidizer (propellant only, no ullage)
+  v_fuel_m3                  - [m^3]     Volume of liquid fuel (propellant only, no ullage)
+  v_pressurant_tank_m3       - [m^3]     Internal volume of the pressurant tank
 ---------------------------------------------------------------------------
 %}
 
@@ -170,6 +174,7 @@ if P.use_cots_tank
     % Wall thickness and internal radius are not available until spec sheet is received
     r_pressurant_internal_m    = NaN;   % %%% PLACEHOLDER %%% [m]   Internal radius — unknown until spec sheet received
     t_pressurant_tank_m        = NaN;   % %%% PLACEHOLDER %%% [m]   Wall thickness  — unknown until spec sheet received
+    v_pressurant_tank_m3       = P.cots_tank_volume_m3; % [m^3] Internal volume of the COTS tank (from spec sheet)
 else
     % --- Calculated COPV Path ---
     % Calculate internal volume of pressurant storage tank (Eq. 17)
@@ -220,6 +225,7 @@ else
 
     % Calculate pressurant tank outer diameter for geometry stackup
     d_pressurant_tank_outer_m = 2 * r_pressurant_outer_m; % [m] Final outer diameter of the pressurant tank (for stackup)
+    v_pressurant_tank_m3      = v_pressurant_tank_internal_m3; % [m^3] Calculated internal volume of the pressurant tank
 
 end % end COTS/COPV toggle
 

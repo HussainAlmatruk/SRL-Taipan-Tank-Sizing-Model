@@ -52,7 +52,7 @@ P.t_pressurant_prescribed_m = 0.337*2.54/100;  % [m] Pressurant tank wall thickn
 % When use_cots_tank = true, the COPV material properties in Section 1.4
 % are ignored and the placeholder specs below are used instead.
 % TODO: Replace placeholder values with actual COTS tank spec sheet values.
-P.use_cots_tank = true;                     % [unitless] true - use COTS tank specs, false - calculate COPV
+P.use_cots_tank = false;                     % [unitless] true - use COTS tank specs, false - calculate COPV
 
 P.cots_tank_mass_kg           = 5;          % %%% PLACEHOLDER %%%  [kg]  Empty mass of the COTS tank TODO: Update from spec sheet
 P.cots_tank_volume_m3         = 0.010;      % %%% PLACEHOLDER %%%  [m^3] Internal volume of the COTS tank TODO: Update from spec sheet
