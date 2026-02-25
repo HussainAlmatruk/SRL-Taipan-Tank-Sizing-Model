@@ -153,7 +153,7 @@ m_empty_fuel_tank_kg = P.material_density_fuel_kgm3 * (pi * (r_fuel_tank_m^2 - (
 % NOTE: This gas mass calculation runs regardless of tank type (COTS or COPV) —
 %       the amount of gas needed is determined by propellant volumes and pressures,
 %       not by the physical tank that stores it.
-n_ox_mol   = (P.p_op_ox_tank_pa   * v_total_ox_tank_m3)   / (C.r_universal_jmolk * (P.ox_temp_k + P.pressurant_temp_k)/2); % [mol] Moles of gas to displace oxidizer
+n_ox_mol   = (P.p_op_ox_tank_pa   * v_total_ox_tank_m3)   / (C.r_universal_jmolk * (P.ox_temp_k + P.pressurant_temp_k)/2);  % [mol] Moles of gas to displace oxidizer, Currently Calculated by using the avg temp of the OX and pressurant
 n_fuel_mol = (P.p_op_fuel_tank_pa * v_total_fuel_tank_m3) / (C.r_universal_jmolk * P.fuel_temp_k);                          % [mol] Moles of gas to displace fuel
 
 % Calculate total moles of pressurant (Eq. 15)
