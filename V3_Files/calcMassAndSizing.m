@@ -11,8 +11,13 @@ function [m_dot_total_kgs, m_dot_ox_kgs, m_dot_fuel_kgs,                        
           m_empty_pressurant_tank_kg, m_misc_and_plumbing_kg,                       ...
           l_ox_tank_total_m, l_fuel_tank_total_m, l_pressurant_tank_total_m,       ...
           l_total_vehicle_m,                                                         ...
-          m_total_kg, m_final_kg, twr_ratio, delta_v_ms, ...
-          v_ox_m3, v_fuel_m3, v_pressurant_tank_m3] = calcMassAndSizing(P, C)
+          m_total_kg, m_final_kg, twr_ratio, delta_v_ms,                            ...
+          v_ox_m3, v_fuel_m3, v_pressurant_tank_m3,                                 ...
+          m_pressurant_gas_isothermal_kg, v_storage_isothermal_L,                   ...
+          m_pressurant_gas_cold_kg, v_storage_cold_L,                               ...
+          m_pressurant_gas_warm_kg, v_storage_warm_L,                               ...
+          m_pressurant_gas_thermal_kg, v_storage_thermal_L,                         ...
+          T_ox_history_K, T_fuel_history_K, t_history_s] = calcMassAndSizing(P, C)
 %{
 ---------------------------------------------------------------------------
 calcMassAndSizing
@@ -78,6 +83,17 @@ Outputs:
   v_ox_m3                    - [m^3]     Volume of liquid oxidizer (propellant only, no ullage)
   v_fuel_m3                  - [m^3]     Volume of liquid fuel (propellant only, no ullage)
   v_pressurant_tank_m3       - [m^3]     Internal volume of the pressurant tank
+  m_pressurant_gas_isothermal_kg - [kg]  Pressurant mass from the OLD isothermal model (for comparison)
+  v_storage_isothermal_L     - [L]       Required storage volume from isothermal model (for comparison)
+  m_pressurant_gas_cold_kg   - [kg]      COLD BOUND: pressurant mass if gas stays at LOX temp (90 K) — absolute max
+  v_storage_cold_L           - [L]       COLD BOUND: required storage volume
+  m_pressurant_gas_warm_kg   - [kg]      WARM BOUND: pressurant mass if gas stays at inlet temp (294 K) — absolute min
+  v_storage_warm_L           - [L]       WARM BOUND: required storage volume
+  m_pressurant_gas_thermal_kg - [kg]     Pressurant mass from the transient thermal model
+  v_storage_thermal_L        - [L]       Required storage volume from thermal model
+  T_ox_history_K             - [K]       LOX ullage gas temperature history (for plotting)
+  T_fuel_history_K           - [K]       Fuel ullage gas temperature history (for plotting)
+  t_history_s                - [s]       Time array for temperature histories (for plotting)
 ---------------------------------------------------------------------------
 %}
 
@@ -148,19 +164,96 @@ m_empty_fuel_tank_kg = P.material_density_fuel_kgm3 * (pi * (r_fuel_tank_m^2 - (
 
 % --- Pressurant Tank ---
 
-% Calculate moles of pressurant required to displace propellants (Eq. 14, Ideal Gas Law)
-% Assumes pressurant gas takes the temperature in the propellant tanks
-% NOTE: This gas mass calculation runs regardless of tank type (COTS or COPV) —
-%       the amount of gas needed is determined by propellant volumes and pressures,
-%       not by the physical tank that stores it.
-n_ox_mol   = (P.p_op_ox_tank_pa   * v_total_ox_tank_m3)   / (C.r_universal_jmolk * (P.ox_temp_k + P.pressurant_temp_k)/2);  % [mol] Moles of gas to displace oxidizer, Currently Calculated by using the avg temp of the OX and pressurant
-n_fuel_mol = (P.p_op_fuel_tank_pa * v_total_fuel_tank_m3) / (C.r_universal_jmolk * P.fuel_temp_k);                          % [mol] Moles of gas to displace fuel
+% ======================================================================
+%  ISOTHERMAL MODEL (OLD/BASELINE) — Conservative worst-case estimate
+%  Assumes gas reaches thermal equilibrium with the propellant.
+%  This is the original calculation, kept here for comparison.
+% ======================================================================
+n_ox_mol_isothermal   = (P.p_op_ox_tank_pa   * v_total_ox_tank_m3)   / (C.r_universal_jmolk * (P.ox_temp_k + P.pressurant_temp_k)/2);  % [mol] Moles of gas to displace oxidizer (avg temp of OX and pressurant)
+n_fuel_mol_isothermal = (P.p_op_fuel_tank_pa * v_total_fuel_tank_m3) / (C.r_universal_jmolk * P.fuel_temp_k);                          % [mol] Moles of gas to displace fuel
 
-% Calculate total moles of pressurant (Eq. 15)
-n_total_mol = n_ox_mol + n_fuel_mol; % [mol] Total moles of pressurant gas needed
+n_total_mol_isothermal           = n_ox_mol_isothermal + n_fuel_mol_isothermal;                    % [mol] Total moles (isothermal)
+m_pressurant_gas_isothermal_kg   = n_total_mol_isothermal * P.pressurant_molar_mass_kgmol;         % [kg]  Total pressurant mass (isothermal)
+v_storage_isothermal_m3          = (n_total_mol_isothermal * C.r_universal_jmolk * P.pressurant_temp_k) / P.p_storage_pressurant_pa; % [m^3] Storage volume needed (isothermal)
+v_storage_isothermal_L           = v_storage_isothermal_m3 * 1000;                                 % [L]   Storage volume in liters (isothermal)
 
-% Calculate total mass of pressurant gas (Eq. 16)
-m_pressurant_gas_kg = n_total_mol * P.pressurant_molar_mass_kgmol; % [kg] Total Mass of pressurant gas needed
+% ======================================================================
+%  ISOTHERMAL BOUNDS — Absolute min and max pressurant mass
+%  These bracket the entire possible range using the ideal gas law.
+%
+%  IMPORTANT: The ullage does not fill the entire tank at end of burn
+%  because a fraction of propellant remains as residuals (P.residual_fraction).
+%  The actual final ullage volume is:
+%    V_final = V_tank * [ullage_frac + (1 - ullage_frac)*(1 - residual_frac)]
+%  This is the volume the gas must fill, and what the thermal model uses.
+%
+%  COLD BOUND (Maximum N2): Gas in the LOX tank is at LOX temperature
+%    (90 K) and never warms up. This is the absolute worst case — cold
+%    gas is dense, so you need the most mass to fill the volume.
+%
+%  WARM BOUND (Minimum N2): Gas in the LOX tank is at the inlet/storage
+%    temperature (294 K) and never cools down. This is the absolute best
+%    case — warm gas is less dense, so you need the least mass.
+%
+%  The fuel tank is at 294 K in both cases (fuel = ambient temp).
+% ======================================================================
+
+% Calculate actual final ullage volumes (accounting for residual propellant)
+v_final_ullage_ox_m3   = v_total_ox_tank_m3   * (P.ullage_fraction_ox   + (1 - P.ullage_fraction_ox)   * (1 - P.residual_fraction)); % [m^3] LOX tank ullage volume at end of burn
+v_final_ullage_fuel_m3 = v_total_fuel_tank_m3 * (P.ullage_fraction_fuel + (1 - P.ullage_fraction_fuel) * (1 - P.residual_fraction)); % [m^3] Fuel tank ullage volume at end of burn
+
+% --- COLD BOUND (gas at LOX temp = 90 K) ---
+n_ox_mol_cold   = (P.p_op_ox_tank_pa   * v_final_ullage_ox_m3)   / (C.r_universal_jmolk * P.ox_temp_k);   % [mol] LOX ullage gas at 90 K (worst case)
+n_fuel_mol_cold = (P.p_op_fuel_tank_pa * v_final_ullage_fuel_m3) / (C.r_universal_jmolk * P.fuel_temp_k);  % [mol] Fuel ullage gas at 294 K (same as always)
+
+n_total_mol_cold         = n_ox_mol_cold + n_fuel_mol_cold;                                               % [mol] Total moles (cold bound)
+m_pressurant_gas_cold_kg = n_total_mol_cold * P.pressurant_molar_mass_kgmol;                              % [kg]  Total pressurant mass (cold bound)
+v_storage_cold_m3        = (n_total_mol_cold * C.r_universal_jmolk * P.pressurant_temp_k) / P.p_storage_pressurant_pa; % [m^3] Storage volume (cold bound)
+v_storage_cold_L         = v_storage_cold_m3 * 1000;                                                      % [L]   Storage volume in liters (cold bound)
+
+% --- WARM BOUND (gas at inlet temp = 294 K) ---
+n_ox_mol_warm   = (P.p_op_ox_tank_pa   * v_final_ullage_ox_m3)   / (C.r_universal_jmolk * P.pressurant_temp_k); % [mol] LOX ullage gas at 294 K (best case)
+n_fuel_mol_warm = (P.p_op_fuel_tank_pa * v_final_ullage_fuel_m3) / (C.r_universal_jmolk * P.fuel_temp_k);       % [mol] Fuel ullage gas at 294 K
+
+n_total_mol_warm         = n_ox_mol_warm + n_fuel_mol_warm;                                               % [mol] Total moles (warm bound)
+m_pressurant_gas_warm_kg = n_total_mol_warm * P.pressurant_molar_mass_kgmol;                              % [kg]  Total pressurant mass (warm bound)
+v_storage_warm_m3        = (n_total_mol_warm * C.r_universal_jmolk * P.pressurant_temp_k) / P.p_storage_pressurant_pa; % [m^3] Storage volume (warm bound)
+v_storage_warm_L         = v_storage_warm_m3 * 1000;                                                      % [L]   Storage volume in liters (warm bound)
+
+% ======================================================================
+%  TRANSIENT THERMAL MODEL (NEW) — More physically accurate estimate
+%  Tracks the actual ullage gas temperature over time using an energy
+%  balance. Typically gives 30-60% less mass than the isothermal model
+%  for the LOX tank. See calcPressurantThermal.m for full details.
+% ======================================================================
+if P.use_thermal_model
+    [m_pressurant_gas_thermal_kg, v_storage_thermal_m3, v_storage_thermal_L, ...
+     ~, ~, T_ox_history_K, T_fuel_history_K, t_history_s] = calcPressurantThermal( ...
+        v_total_ox_tank_m3, v_total_fuel_tank_m3,                           ...
+        m_dot_ox_kgs, m_dot_fuel_kgs,                                       ...
+        t_cyl_ox_m, t_cyl_fuel_m,                                          ...
+        d_ox_tank_m, d_fuel_tank_m,                                         ...
+        P, C);
+else
+    % Thermal model disabled — fill outputs with isothermal values
+    m_pressurant_gas_thermal_kg = m_pressurant_gas_isothermal_kg;
+    v_storage_thermal_m3        = v_storage_isothermal_m3;
+    v_storage_thermal_L         = v_storage_isothermal_L;
+    T_ox_history_K              = [];
+    T_fuel_history_K            = [];
+    t_history_s                 = [];
+end
+
+% ======================================================================
+%  SELECT ACTIVE PRESSURANT MASS
+%  When the thermal model is enabled, use it as the design value.
+%  When disabled, fall back to the isothermal (conservative) value.
+% ======================================================================
+if P.use_thermal_model
+    m_pressurant_gas_kg = m_pressurant_gas_thermal_kg; % [kg] Use thermal model result
+else
+    m_pressurant_gas_kg = m_pressurant_gas_isothermal_kg; % [kg] Use isothermal model result (conservative)
+end
 
 if P.use_cots_tank
     % --- COTS Tank Path ---
@@ -178,7 +271,9 @@ if P.use_cots_tank
 else
     % --- Calculated COPV Path ---
     % Calculate internal volume of pressurant storage tank (Eq. 17)
-    v_pressurant_tank_internal_m3 = (n_total_mol * C.r_universal_jmolk * P.pressurant_temp_k) / P.p_storage_pressurant_pa; % [m^3] Internal volume of the high-pressure storage tank
+    % Use the active pressurant mass (thermal or isothermal, depending on toggle)
+    n_active_mol = m_pressurant_gas_kg / P.pressurant_molar_mass_kgmol; % [mol] Active total moles (from whichever model is selected)
+    v_pressurant_tank_internal_m3 = (n_active_mol * C.r_universal_jmolk * P.pressurant_temp_k) / P.p_storage_pressurant_pa; % [m^3] Internal volume of the high-pressure storage tank
 
     % Calculate wall thickness of spherical pressurant tank (Eq. 19)
     p_design_pressurant_pa = P.p_storage_pressurant_pa * P.safety_factor; % [Pa] Design pressure for pressurant tank

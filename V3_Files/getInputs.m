@@ -29,10 +29,10 @@ P.o_f_ratio     = 2.3;                 % [unitless] Oxidizer-to-Fuel mass ratio
 P.ox_density_kgm3             = 1141;          % [kg/m^3]  Density of Liquid Oxygen
 P.fuel_density_kgm3           = 820;           % [kg/m^3]  Density of Jet-A
 P.pressurant_molar_mass_kgmol = 0.0280134;     % [kg/mol]  Molar mass of Nitrogen (N2)
-P.residual_fraction           = 0.1;           % %%% TEMPORARY VALUE %%% [~] Percentage of fuel left over in tank after burnout
+P.residual_fraction           = 0.05;           % %%% TEMPORARY VALUE %%% [~] Percentage of fuel left over in tank after burnout
 
-P.p_op_ox_tank_pa         = 1000 * C.PSI_TO_PA;    % [Pa] Operating pressure of LOX tank (Updated from 8000 kPa)
-P.p_op_fuel_tank_pa       = 1000 * C.PSI_TO_PA;    % [Pa] Operating pressure of Fuel tank (Updated from 5050 kPa)
+P.p_op_ox_tank_pa         = 1000 * C.PSI_TO_PA;    % [Pa] Operating pressure of LOX tank
+P.p_op_fuel_tank_pa       = 1000 * C.PSI_TO_PA;    % [Pa] Operating pressure of Fuel tank
 P.p_storage_pressurant_pa = 3000 * C.PSI_TO_PA;    % [Pa] The pressure the Nitrogen is stored in dedicated tank (MEOP). TODO: Define this value
 P.ox_temp_k               = 90;                    % %%% TEMPORARY VALUE %%% [K] Temperature of LOX in tank TODO: Define this value
 P.fuel_temp_k             = 294;                   % %%% TEMPORARY VALUE %%% [K] Temperature of Jet-A in tank (Ambient probably)
@@ -50,14 +50,25 @@ P.t_pressurant_prescribed_m = 0.337*2.54/100;  % [m] Pressurant tank wall thickn
 % Toggle between a purchased off-the-shelf pressure vessel (true) and the
 % calculated composite overwrapped pressure vessel / COPV math (false).
 % When use_cots_tank = true, the COPV material properties in Section 1.4
-% are ignored and the placeholder specs below are used instead.
-% TODO: Replace placeholder values with actual COTS tank spec sheet values.
-P.use_cots_tank = false;                     % [unitless] true - use COTS tank specs, false - calculate COPV
+% are ignored and the specs below are used instead.
+%
+% Current tank: Philips Respironics UltraFill ME36, 3000 PSI Oxygen Cylinder
+% This is an E-size aluminum cylinder rated for 3000 PSI.
+% Specs from standard E-cylinder dimensions:
+%   Height:         29.1 in  (0.7391 m)
+%   Outer Diameter: 4.38 in  (0.1113 m) — standard E-cylinder OD
+%   Weight:         9.3 lbs  (4.22 kg)
+%   Internal Volume: ~4.5 L  (0.0045 m^3) — lowest estimate
+%   Inner Diameter:  UNKNOWN — needs physical measurement
+%   Wall Thickness:  UNKNOWN — needs physical measurement
+P.use_cots_tank = true;                      % [unitless] true - use COTS tank specs (ME36), false - calculate COPV
 
-P.cots_tank_mass_kg           = 5;          % %%% PLACEHOLDER %%%  [kg]  Empty mass of the COTS tank TODO: Update from spec sheet
-P.cots_tank_volume_m3         = 0.010;      % %%% PLACEHOLDER %%%  [m^3] Internal volume of the COTS tank TODO: Update from spec sheet
-P.cots_tank_outer_diameter_m  = 0.1143;     % %%% PLACEHOLDER %%%  [m]   Outer diameter of the COTS tank (4.5 in placeholder) TODO: Update from spec sheet
-P.cots_tank_length_m          = 0.400;      % %%% PLACEHOLDER %%%  [m]   Total length of the COTS tank TODO: Update from spec sheet
+P.cots_tank_mass_kg           = 9.3 * C.LBM_TO_KG;    % [kg]  Empty mass of the ME36 tank (9.3 lbs from spec sheet)
+P.cots_tank_volume_m3         = 0.0045;                % [m^3] Internal volume of the ME36 (4.5 L lowest estimate) TODO: Confirm with physical measurement
+P.cots_tank_outer_diameter_m  = 4.38 * C.IN_TO_M;     % [m]   Outer diameter (4.38 in, standard E-cylinder OD)
+P.cots_tank_length_m          = 29.1 * C.IN_TO_M;     % [m]   Total height of the ME36 from spec sheet (29.1 in)
+% P.cots_tank_inner_diameter_m  = ???;                 % %%% UNKNOWN %%% [m] Inner diameter — needs physical measurement or spec sheet
+% P.cots_tank_wall_thickness_m  = ???;                 % %%% UNKNOWN %%% [m] Wall thickness — needs physical measurement or spec sheet
 
 % --- 1.4 Vehicle Geometry & Materials ---
 % Assumption: Both LOX and Fuel tanks are cylinders of the same diameter
@@ -104,7 +115,35 @@ P.ullage_fraction_fuel  = 0.05;     % %%% TEMPORARY VALUE %%%  [unitless] Percen
 P.l_airframe_max_m  = 3.048;   % [m]     Maximum allowable vehicle length
 P.twr_minimum_ratio = 5;       % [ratio] Thrust to Weight ratio
 
-% --- 1.8 Vehicle Aerodynamic Properties ---
+% --- 1.8 Pressurant Thermal Analysis Parameters ---
+% These inputs control the transient ullage gas thermal model used in
+% calcPressurantThermal.m. See pressurant_thermal_analysis.pdf for the
+% full derivation and recommended value ranges.
+%
+% Toggle: true = use transient thermal model (more accurate, lower mass)
+%         false = use isothermal model only (conservative worst-case)
+P.use_thermal_model = true; % [unitless] true - use transient thermal model, false - isothermal only
+
+% Convective heat transfer coefficient [W/(m^2*K)]
+% This is the most important and most uncertain parameter in the analysis.
+% It controls how fast the ullage gas loses heat to the propellant surface.
+% Recommended values (from pressurant_thermal_analysis.pdf Section 5.2):
+%   Conservative (quiescent):       h = 50   W/(m^2*K) — use for structural sizing
+%   Moderate (natural convection):  h = 100  W/(m^2*K) — use for mass budgets
+%   Aggressive (forced convection): h = 200  W/(m^2*K) — performance upper bound
+P.h_convection_ox_wm2k   = 100;   % [W/(m^2*K)] Heat transfer coefficient for LOX tank (big effect)
+P.h_convection_fuel_wm2k = 10;    % [W/(m^2*K)] Heat transfer coefficient for Fuel tank (negligible effect, gas and fuel are same temp)
+
+% Nitrogen gas specific heat at constant pressure
+% Approximately constant over the 90-294 K range at moderate pressures.
+% See pressurant_thermal_analysis.pdf Section 6.2.
+P.cp_n2_jkgk = 1040;              % [J/(kg*K)] Specific heat of N2 at constant pressure
+
+% Timestep for the thermal simulation (forward Euler method)
+% 0.01 s gives 900 steps over a 9 s burn, which is plenty for convergence.
+P.dt_thermal_s = 0.01;            % [s] Timestep for the transient thermal model
+
+% --- 1.9 Vehicle Aerodynamic Properties ---
 rasaero_data = readtable("4in_RASAero_CD_data.CSV");                                                                                    % %%% TEMPORARY VALUES %%% [~] Load in vehicle aerodynamic data from RASAero
 P.rasaero_data_0_AoA = rasaero_data(rasaero_data.Alpha == 0,:); P.rasaero_data_0_AoA = P.rasaero_data_0_AoA(1:end-1,:);  % [~] Seperate out data for 0 degree angle of attack (also trim to be same size as 4 deg array)
 P.rasaero_data_2_AoA = rasaero_data(rasaero_data.Alpha == 2,:); P.rasaero_data_2_AoA = P.rasaero_data_2_AoA(1:end-1,:);  % [~] Seperate out data for 2 degree angle of attack (also trim to be same size as 4 deg array)
