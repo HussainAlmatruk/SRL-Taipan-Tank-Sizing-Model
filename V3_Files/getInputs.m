@@ -90,8 +90,8 @@ P.joint_efficiency_fuel_tank       = 0.8; % %%% TEMPORARY VALUE %%%  [unitless] 
 P.joint_efficiency_pressurant_tank = 0.8; % %%% TEMPORARY VALUE %%%  [unitless] TODO: Define this value
 
 P.corrosion_allowance_m = 0.0002;  % %%% TEMPORARY VALUE %%%  [m]        Extra thickness for material degradation
-P.ullage_fraction_ox    = 0.2;     % %%% TEMPORARY VALUE %%%  [unitless] Percent of empty volume in tanks (e.g., 0.1 for 10%)
-P.ullage_fraction_fuel  = 0.1;     % %%% TEMPORARY VALUE %%%  [unitless] Percent of empty volume in tanks (e.g., 0.1 for 10%)
+P.ullage_fraction_ox    = 0.01;     % %%% TEMPORARY VALUE %%%  [unitless] Percent of empty volume in tanks (e.g., 0.1 for 10%)
+P.ullage_fraction_fuel  = 0.01;     % %%% TEMPORARY VALUE %%%  [unitless] Percent of empty volume in tanks (e.g., 0.1 for 10%)
 
 % --- 1.6 Mass Assumptions ---
 % NOTE: The combined mass of miscellaneous items (payload, structure, fins,
