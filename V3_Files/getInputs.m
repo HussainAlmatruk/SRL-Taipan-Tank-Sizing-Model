@@ -33,10 +33,19 @@ P.residual_fraction           = 0.05;           % %%% TEMPORARY VALUE %%% [~] Pe
 
 P.p_op_ox_tank_pa         = 1000 * C.PSI_TO_PA;    % [Pa] Operating pressure of LOX tank
 P.p_op_fuel_tank_pa       = 1000 * C.PSI_TO_PA;    % [Pa] Operating pressure of Fuel tank
-P.p_storage_pressurant_pa = 3000 * C.PSI_TO_PA;    % [Pa] The pressure the Nitrogen is stored in dedicated tank (MEOP). TODO: Define this value
+P.p_storage_pressurant_pa = 3000 * C.PSI_TO_PA;    % [Pa] The pressure the Nitrogen is stored in dedicated tank (MEOP)
 P.ox_temp_k               = 90;                    % %%% TEMPORARY VALUE %%% [K] Temperature of LOX in tank TODO: Define this value
 P.fuel_temp_k             = 294;                   % %%% TEMPORARY VALUE %%% [K] Temperature of Jet-A in tank (Ambient probably)
-P.pressurant_temp_k       = 294;                   % %%% TEMPORARY VALUE %%% [K] Temperature of pressurant gas in its tank
+
+% Pressurant fill temperature — the temperature at which the tank is
+% filled and stored pre-launch.  Used to compute how much gas mass
+% fits in the storage tank and for the required storage volume check.
+
+P.pressurant_fill_temp_k  = 294;                   % [K] Temperature of pressurant gas at time of filling (always ambient)
+
+% Legacy alias — kept so that any old code referencing
+% P.pressurant_temp_k still works.  Points to the fill temperature.
+P.pressurant_temp_k       = P.pressurant_fill_temp_k; % [K] Alias for backwards compatibility
 
 % --- 1.3 Tank Construction Properties ---
 P.prescribe_t = 0;      % [unitless] 1 - Prescribe tank thicknesses, 0 - calculate optimal tank thickness
@@ -53,22 +62,53 @@ P.t_pressurant_prescribed_m = 0.337*2.54/100;  % [m] Pressurant tank wall thickn
 % are ignored and the specs below are used instead.
 %
 % Current tank: Philips Respironics UltraFill ME36, 3000 PSI Oxygen Cylinder
-% This is an E-size aluminum cylinder rated for 3000 PSI.
-% Specs from standard E-cylinder dimensions:
-%   Height:         29.1 in  (0.7391 m)
+% This is an E-size aluminum 6061 cylinder rated for 3000 PSI (DOT-3AL).
+% Specs from spec sheet and standard E-cylinder dimensions:
+%   Height:         29.1 in  (0.7391 m) — includes valve
 %   Outer Diameter: 4.38 in  (0.1113 m) — standard E-cylinder OD
-%   Weight:         9.3 lbs  (4.22 kg)
+%   Weight:         9.3 lbs  (4.22 kg)  — includes valve
 %   Internal Volume: ~4.5 L  (0.0045 m^3) — lowest estimate
-%   Inner Diameter:  UNKNOWN — needs physical measurement
-%   Wall Thickness:  UNKNOWN — needs physical measurement
+%
+% Wall thickness and inner diameter are ESTIMATED from DOT-3AL minimum
+% wall stress calculations for 3000 PSI service on Al 6061-T6.
+% Standard E-size at 2015 PSI has 7.1 mm wall thickness.  At 3000 PSI
+% the DOT formula gives ~8.0 mm.  Confirm with physical measurement.
+% See notes below for derivation.
 P.use_cots_tank = true;                      % [unitless] true - use COTS tank specs (ME36), false - calculate COPV
 
-P.cots_tank_mass_kg           = 9.3 * C.LBM_TO_KG;    % [kg]  Empty mass of the ME36 tank (9.3 lbs from spec sheet)
+P.cots_tank_mass_kg           = 9.3 * C.LBM_TO_KG;    % [kg]  Empty mass of the ME36 tank (9.3 lbs from spec sheet, includes valve)
 P.cots_tank_volume_m3         = 0.0045;                % [m^3] Internal volume of the ME36 (4.5 L lowest estimate) TODO: Confirm with physical measurement
 P.cots_tank_outer_diameter_m  = 4.38 * C.IN_TO_M;     % [m]   Outer diameter (4.38 in, standard E-cylinder OD)
-P.cots_tank_length_m          = 29.1 * C.IN_TO_M;     % [m]   Total height of the ME36 from spec sheet (29.1 in)
-% P.cots_tank_inner_diameter_m  = ???;                 % %%% UNKNOWN %%% [m] Inner diameter — needs physical measurement or spec sheet
-% P.cots_tank_wall_thickness_m  = ???;                 % %%% UNKNOWN %%% [m] Wall thickness — needs physical measurement or spec sheet
+P.cots_tank_length_m          = 29.1 * C.IN_TO_M;     % [m]   Total height of the ME36 from spec sheet (29.1 in, includes valve)
+
+% --- ESTIMATED dimensions (from DOT-3AL wall stress calculation) ---
+% For a DOT-3AL cylinder at 3000 PSI:
+%   Test pressure = (5/3) * 3000 = 5000 PSI
+%   Al 6061-T6 UTS ~ 45,000 PSI, allowable wall stress = (2/3)*UTS = 30,000 PSI
+%   Solving the DOT thick-wall formula: S = P*(1.3*D^2 + 0.4*d^2)/(D^2 - d^2)
+%   gives inner diameter d ~ 3.75 in, wall thickness ~ 0.315 in ~ 8.0 mm.
+% These are estimates, we need to confirm with physical measurement or manufacturer data.
+P.cots_tank_wall_thickness_m  = 0.0080;                                                       % %%% ESTIMATED %%% [m] Wall thickness (~8.0 mm for 3000 PSI Al 6061)
+P.cots_tank_inner_diameter_m  = P.cots_tank_outer_diameter_m - 2 * P.cots_tank_wall_thickness_m; % [m] Inner diameter (computed from OD and wall thickness)
+
+% --- Internal surface area estimate ---
+% Assumes hemispherical end caps (common for small high-pressure cylinders).
+% Computed from inner diameter and internal volume.
+%   Two hemispheres = one sphere: V_hemi = (4/3)*pi*ri^3
+%   Cylinder length from remaining volume: L_cyl = (V_total - V_hemi) / (pi*ri^2)
+%   Total area = 4*pi*ri^2 (sphere) + 2*pi*ri*L_cyl (cylinder wall)
+ri_cots_m       = P.cots_tank_inner_diameter_m / 2;                                   % [m]   Inner radius
+v_hemi_cots_m3  = (4/3) * pi * ri_cots_m^3;                                           % [m^3] Volume of two hemispherical end caps
+l_cyl_cots_m    = (P.cots_tank_volume_m3 - v_hemi_cots_m3) / (pi * ri_cots_m^2);    % [m]   Length of cylindrical section (internal)
+P.cots_tank_internal_area_m2 = 4*pi*ri_cots_m^2 + 2*pi*ri_cots_m*l_cyl_cots_m;      % %%% ESTIMATED %%% [m^2] Total internal surface area
+
+% --- Wall thermal mass ---
+% For the blowdown model, we need the mass and specific heat of the tank
+% wall to track how much thermal energy the wall can supply to the cooling
+% gas.  The total spec-sheet mass includes the valve (~0.3 kg).  We
+% subtract the valve mass to get the wall mass alone.
+P.cots_tank_valve_mass_kg = 0.3;                                                       % %%% ESTIMATED %%% [kg] Approximate mass of the cylinder valve
+P.cots_tank_wall_mass_kg  = P.cots_tank_mass_kg - P.cots_tank_valve_mass_kg;          % [kg]  Tank wall mass (total - valve)
 
 % --- 1.4 Vehicle Geometry & Materials ---
 % Assumption: Both LOX and Fuel tanks are cylinders of the same diameter
@@ -116,10 +156,8 @@ P.l_airframe_max_m  = 3.048;   % [m]     Maximum allowable vehicle length
 P.twr_minimum_ratio = 5;       % [ratio] Thrust to Weight ratio
 
 % --- 1.8 Pressurant Thermal Analysis Parameters ---
-% These inputs control the transient ullage gas thermal model used in
-% calcPressurantThermal.m. See pressurant_thermal_analysis.pdf for the
-% full derivation and recommended value ranges.
-%
+% These inputs control the transient ullage gas thermal model
+
 % Toggle: true = use transient thermal model (more accurate, lower mass)
 %         false = use isothermal model only (conservative worst-case)
 P.use_thermal_model = true; % [unitless] true - use transient thermal model, false - isothermal only
@@ -127,21 +165,42 @@ P.use_thermal_model = true; % [unitless] true - use transient thermal model, fal
 % Convective heat transfer coefficient [W/(m^2*K)]
 % This is the most important and most uncertain parameter in the analysis.
 % It controls how fast the ullage gas loses heat to the propellant surface.
-% Recommended values (from pressurant_thermal_analysis.pdf Section 5.2):
+% Recommended values:
 %   Conservative (quiescent):       h = 50   W/(m^2*K) — use for structural sizing
 %   Moderate (natural convection):  h = 100  W/(m^2*K) — use for mass budgets
 %   Aggressive (forced convection): h = 200  W/(m^2*K) — performance upper bound
 P.h_convection_ox_wm2k   = 100;   % [W/(m^2*K)] Heat transfer coefficient for LOX tank (big effect)
-P.h_convection_fuel_wm2k = 10;    % [W/(m^2*K)] Heat transfer coefficient for Fuel tank (negligible effect, gas and fuel are same temp)
+P.h_convection_fuel_wm2k = 100;    % [W/(m^2*K)] Heat transfer coefficient for Fuel tank (not that big of an effect, there isn't as much of a temp. diff.)
 
 % Nitrogen gas specific heat at constant pressure
 % Approximately constant over the 90-294 K range at moderate pressures.
-% See pressurant_thermal_analysis.pdf Section 6.2.
 P.cp_n2_jkgk = 1040;              % [J/(kg*K)] Specific heat of N2 at constant pressure
 
 % Timestep for the thermal simulation (forward Euler method)
 % 0.01 s gives 900 steps over a 9 s burn, which is plenty for convergence.
 P.dt_thermal_s = 0.01;            % [s] Timestep for the transient thermal model
+
+% --- 1.8b Pressurant Blowdown Model Parameters ---
+% The blowdown model tracks the pressurant tank gas temperature as it
+% cools due to expansion during the burn.  This cooling means the gas
+% entering the propellant tanks gets progressively colder, which increases
+% the total pressurant mass requirement compared to the V1 thermal model.
+%
+% Toggle: true = coupled blowdown + thermal model (most accurate)
+%         false = V1 thermal model only (constant inlet temp, optimistic)
+P.use_blowdown_model = true; % [unitless] true - coupled blowdown model, false - V1 constant inlet temp
+
+% Nitrogen gas properties (additional, needed for blowdown energy balance)
+P.cv_n2_jkgk = 743;    % [J/(kg*K)]  Specific heat of N2 at constant volume
+P.gamma_n2   = 1.4;    % [unitless]  Specific heat ratio for N2, gamma = cp/cv
+
+% Internal convective heat transfer coefficient for the pressurant tank wall
+% This controls how fast the aluminum tank wall can heat the expanding gas.
+
+P.h_wall_pressurant_wm2k = 50;    % [W/(m^2*K)] Internal convective HTC for pressurant tank (conservative)
+
+% Aluminum 6061 specific heat (for tank wall thermal mass)
+P.c_wall_pressurant_jkgk = 896;   % [J/(kg*K)]  Specific heat of Al 6061
 
 % --- 1.9 Vehicle Aerodynamic Properties ---
 rasaero_data = readtable("4in_RASAero_CD_data.CSV");                                                                                    % %%% TEMPORARY VALUES %%% [~] Load in vehicle aerodynamic data from RASAero
