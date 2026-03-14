@@ -67,14 +67,14 @@ MS_TO_MPH = 2.23694;
 % --- 1.1 Engine & Performance ---
 f_thrust_n      = 650 * LBF_TO_N;          % [N] Engine thrust (Updated)
 i_sp_s          = 291.29;           % [s] Specific impulse (Derived from new Thrust and Mass Flow)
-t_burn_s        = 9;                % [s] Total burn time
+t_burn_s        = 6.5;                % [s] Total burn time
 o_f_ratio       = 2.3;              % [unitless] Oxidizer-to-Fuel mass ratio
 
 % --- 1.2 Propellants & Pressurant ---
 ox_density_kgm3   = 1141;                   % [kg/m^3] Density of Liquid Oxygen
 fuel_density_kgm3 = 820;                    % [kg/m^3] Density of Jet-A
 pressurant_molar_mass_kgmol = 0.0280134;    % [kg/mol] Molar mass of Nitrogen (N2)
-residual_fraction = 0.1;                    % %%% TEMPORARY VALUE %%% [~] Percentage of fuel left over in tank after burnout
+residual_fraction = 0.05;                    % %%% TEMPORARY VALUE %%% [~] Percentage of fuel left over in tank after burnout
 
 p_op_ox_tank_pa = 1000 * PSI_TO_PA;              % [Pa] Operating pressure of LOX tank (Updated from 8000 kPa)
 p_op_fuel_tank_pa = 1000 * PSI_TO_PA;            % [Pa] Operating pressure of Fuel tank (Updated from 5050 kPa)
@@ -123,8 +123,8 @@ joint_efficiency_fuel_tank      = 0.8; % %%% TEMPORARY VALUE %%%  [unitless] TOD
 joint_efficiency_pressurant_tank= 0.8; % %%% TEMPORARY VALUE %%%  [unitless] TODO: Define this value
 
 corrosion_allowance_m = 0.0002;       % %%% TEMPORARY VALUE %%%  [m] Extra thickness for material degradation
-ullage_fraction_ox       = 0.2;      % %%% TEMPORARY VALUE %%%  [unitless] Percent of empty volume in tanks (e.g., 0.1 for 10%)
-ullage_fraction_fuel     = 0.1;      % %%% TEMPORARY VALUE %%%  [unitless] Percent of empty volume in tanks (e.g., 0.1 for 10%)
+ullage_fraction_ox       = 0.05;      % %%% TEMPORARY VALUE %%%  [unitless] Percent of empty volume in tanks (e.g., 0.1 for 10%)
+ullage_fraction_fuel     = 0.05;      % %%% TEMPORARY VALUE %%%  [unitless] Percent of empty volume in tanks (e.g., 0.1 for 10%)
 
 % --- 1.6 Estimated Masses (Non-Calculated) ---
 

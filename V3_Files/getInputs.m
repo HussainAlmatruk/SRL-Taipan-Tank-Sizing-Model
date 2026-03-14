@@ -22,7 +22,7 @@ Output:
 % --- 1.1 Engine & Performance ---
 P.f_thrust_n    = 650 * C.LBF_TO_N;    % [N]        Engine thrust (Updated)
 P.i_sp_s        = 291.29;              % [s]        Specific impulse (Derived from new Thrust and Mass Flow)
-P.t_burn_s      = 9;                   % [s]        Total burn time
+P.t_burn_s      = 6.5;                   % [s]        Total burn time
 P.o_f_ratio     = 2.3;                 % [unitless] Oxidizer-to-Fuel mass ratio
 
 % --- 1.2 Propellants & Pressurant ---
