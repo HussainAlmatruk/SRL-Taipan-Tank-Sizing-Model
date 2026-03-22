@@ -177,7 +177,7 @@ for i = 1:N_steps
         % No inflow: regulator does not allow backflow.
         % Gas mass stays the same; only heat transfer changes temperature.
         dm_in_ox_kg     = 0;                                                        % [kg] No mass enters
-        T_gas_ox_v1_K   = T_gas_ox_v1_K + Q_ox_J / (m_gas_ox_v1_kg * cp_n2_jkgk); % [K] Temperature from heat transfer only
+        T_gas_ox_v1_K   = rk4_heat_transfer_only(T_gas_ox_v1_K, T_prop_ox_K, h_ox_wm2k, A_contact_ox_m2, m_gas_ox_v1_kg, cp_n2_jkgk, dt_s); % [K] Temperature from heat transfer only (RK4)
     end
 
     T_ox_v1_hist_K(i+1) = T_gas_ox_v1_K;                                           % Store temperature for plotting
@@ -209,7 +209,7 @@ for i = 1:N_steps
         T_gas_fuel_v1_K   = p_fuel_pa * V_ullage_fuel_v1_m3 / (R_s_jkgk * m_gas_fuel_v1_kg); % [K] Temp from ideal gas
     else
         dm_in_fuel_kg     = 0;                                                              % [kg] No mass enters
-        T_gas_fuel_v1_K   = T_gas_fuel_v1_K + Q_fuel_J / (m_gas_fuel_v1_kg * cp_n2_jkgk); % [K] Heat transfer only
+        T_gas_fuel_v1_K   = rk4_heat_transfer_only(T_gas_fuel_v1_K, T_prop_fuel_K, h_fuel_wm2k, A_contact_fuel_m2, m_gas_fuel_v1_kg, cp_n2_jkgk, dt_s); % [K] Heat transfer only (RK4)
     end
 
     T_fuel_v1_hist_K(i+1) = T_gas_fuel_v1_K;
@@ -371,7 +371,7 @@ if P.use_blowdown_model
             else
                 % No inflow: regulator blocks backflow. Only heat transfer.
                 dm_in_ox_kg = 0;                                                    % [kg]
-                T_gas_ox_K  = T_gas_ox_K + Q_ox_J / (m_gas_ox_kg * cp_n2_jkgk);  % [K]
+                T_gas_ox_K  = rk4_heat_transfer_only(T_gas_ox_K, T_prop_ox_K, h_ox_wm2k, A_contact_ox_m2, m_gas_ox_kg, cp_n2_jkgk, dt_s);  % [K] RK4 integration
             end
 
             % ==========================================================
@@ -396,7 +396,7 @@ if P.use_blowdown_model
                 T_gas_fuel_K  = p_fuel_pa * V_ullage_fuel_m3 / (R_s_jkgk * m_gas_fuel_kg); % [K]
             else
                 dm_in_fuel_kg = 0;                                                   % [kg]
-                T_gas_fuel_K  = T_gas_fuel_K + Q_fuel_J / (m_gas_fuel_kg * cp_n2_jkgk); % [K]
+                T_gas_fuel_K  = rk4_heat_transfer_only(T_gas_fuel_K, T_prop_fuel_K, h_fuel_wm2k, A_contact_fuel_m2, m_gas_fuel_kg, cp_n2_jkgk, dt_s); % [K] RK4 integration
             end
 
             % ==========================================================
@@ -407,29 +407,48 @@ if P.use_blowdown_model
             dm_out_kg    = dm_in_ox_kg + dm_in_fuel_kg;                             % [kg]
             mdot_out_kgs = dm_out_kg / dt_s;                                        % [kg/s]
 
-            % Wall-to-gas heat transfer inside the pressurant tank
-            % Positive when wall is warmer than gas (wall heats the expanding gas)
-            Qdot_wall_W = h_wall_wm2k * A_wall_m2 * (T_wall_K - T_pt_K);          % [W]
+            % --- Runge-Kutta 4th Order Integration for PT State ---
+            m0  = m_pt_kg;
+            Tp0 = T_pt_K;
+            Tw0 = T_wall_K;
 
-            % Update pressurant gas temperature (forward Euler)
-            %   m_pt * cv * dT_pt/dt = -mdot_out * Rs * T_pt + Qdot_wall
-            %
-            %   First term: cooling from mass outflow. Gas leaving carries
-            %     enthalpy (cp*T), gas staying retains internal energy (cv*T).
-            %     Net energy loss per unit mass leaving = (cp - cv)*T = Rs*T.
-            %   Second term: heating from the aluminum tank wall.
-            dT_pt_K = ((-mdot_out_kgs * R_s_jkgk * T_pt_K + Qdot_wall_W) ...
-                       / (m_pt_kg * cv_n2_jkgk)) * dt_s;                           % [K]
-            T_pt_K  = T_pt_K + dT_pt_K;                                            % [K]
+            % k1
+            Qdot1 = h_wall_wm2k * A_wall_m2 * (Tw0 - Tp0);
+            k1_Tp = (-mdot_out_kgs * R_s_jkgk * Tp0 + Qdot1) / (m0 * cv_n2_jkgk);
+            k1_Tw = -Qdot1 / (m_wall_kg * c_wall_jkgk);
+            k1_m  = -mdot_out_kgs;
 
-            % Update wall temperature (lumped capacitance, forward Euler)
-            %   Wall cools as it gives up heat to the expanding gas.
-            %   Valid because Biot number << 1 for thin aluminum wall.
-            dT_wall_K = (-Qdot_wall_W / (m_wall_kg * c_wall_jkgk)) * dt_s;        % [K]
-            T_wall_K  = T_wall_K + dT_wall_K;                                      % [K]
+            % k2
+            m2  = m0 + k1_m * dt_s/2;
+            Tp2 = Tp0 + k1_Tp * dt_s/2;
+            Tw2 = Tw0 + k1_Tw * dt_s/2;
+            Qdot2 = h_wall_wm2k * A_wall_m2 * (Tw2 - Tp2);
+            k2_Tp = (-mdot_out_kgs * R_s_jkgk * Tp2 + Qdot2) / (m2 * cv_n2_jkgk);
+            k2_Tw = -Qdot2 / (m_wall_kg * c_wall_jkgk);
+            k2_m  = -mdot_out_kgs;
 
-            % Update pressurant tank mass
-            m_pt_kg = m_pt_kg - dm_out_kg;                                          % [kg]
+            % k3
+            m3  = m0 + k2_m * dt_s/2;
+            Tp3 = Tp0 + k2_Tp * dt_s/2;
+            Tw3 = Tw0 + k2_Tw * dt_s/2;
+            Qdot3 = h_wall_wm2k * A_wall_m2 * (Tw3 - Tp3);
+            k3_Tp = (-mdot_out_kgs * R_s_jkgk * Tp3 + Qdot3) / (m3 * cv_n2_jkgk);
+            k3_Tw = -Qdot3 / (m_wall_kg * c_wall_jkgk);
+            k3_m  = -mdot_out_kgs;
+
+            % k4
+            m4  = m0 + k3_m * dt_s;
+            Tp4 = Tp0 + k3_Tp * dt_s;
+            Tw4 = Tw0 + k3_Tw * dt_s;
+            Qdot4 = h_wall_wm2k * A_wall_m2 * (Tw4 - Tp4);
+            k4_Tp = (-mdot_out_kgs * R_s_jkgk * Tp4 + Qdot4) / (m4 * cv_n2_jkgk);
+            k4_Tw = -Qdot4 / (m_wall_kg * c_wall_jkgk);
+            k4_m  = -mdot_out_kgs;
+
+            % Update state arrays
+            T_pt_K   = Tp0 + (dt_s / 6) * (k1_Tp + 2*k2_Tp + 2*k3_Tp + k4_Tp);
+            T_wall_K = Tw0 + (dt_s / 6) * (k1_Tw + 2*k2_Tw + 2*k3_Tw + k4_Tw);
+            m_pt_kg  = m0  + (dt_s / 6) * (k1_m + 2*k2_m + 2*k3_m + k4_m);
 
             % ==========================================================
             %  Step 5: STORE HISTORIES
@@ -563,4 +582,26 @@ end
 
 v_storage_thermal_L = v_storage_thermal_m3 * 1000;                                 % [L]
 
+end
+
+% =========================================================================
+% Local Helper Function
+% =========================================================================
+function T_new = rk4_heat_transfer_only(T_old, T_prop, h, A, m, cp, dt)
+    % Integrates dT/dt = h * A * (T_prop - T) / (m * cp) using RK4
+    % This is used in the edge case where the regulator blocks backflow
+    % and the gas temperature updates solely due to heat transfer.
+    
+    k1 = h * A * (T_prop - T_old) / (m * cp);
+    T2 = T_old + k1 * dt / 2;
+    
+    k2 = h * A * (T_prop - T2) / (m * cp);
+    T3 = T_old + k2 * dt / 2;
+    
+    k3 = h * A * (T_prop - T3) / (m * cp);
+    T4 = T_old + k3 * dt;
+    
+    k4 = h * A * (T_prop - T4) / (m * cp);
+    
+    T_new = T_old + (dt / 6) * (k1 + 2*k2 + 2*k3 + k4);
 end
