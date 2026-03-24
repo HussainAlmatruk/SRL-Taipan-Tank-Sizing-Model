@@ -118,6 +118,10 @@ P.d_tank_outer_m    = 6.675 * C.IN_TO_M; % [m] Tank outer diameter
 P.wall_thickness_m  = 0*2.54/100;      % [m] Vehicle airframe wall thickness
 P.inner_clearance_m = 0*2.54/100;      % [m] Clearance between tank and vehicle inner wall
 
+% --- Tank Stackup Spacing ---
+P.gap_lox_fuel_m  = 0.15;  % [m] Distance between the LOX tank and Fuel tank
+P.gap_fuel_pres_m = 0.15;  % [m] Distance between the Fuel tank and Pressurant tank
+
 % Material Properties for LOX Tank
 P.material_density_ox_kgm3        = 2700;   % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value
 P.material_allowable_stress_ox_pa = 2.76e8; % %%% TEMPORARY VALUE %%%  [Pa]     TODO: Define this value
