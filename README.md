@@ -41,6 +41,6 @@ The script is organized into sequential blocks for clear organization and mainta
 
 ## ✅ Current Tasks & To-Do List
 
+## Links
 
-
-
+[![Hypercommit](https://img.shields.io/badge/Hypercommit-DB2475)](https://hypercommit.com/srl-taipan-tank-sizing-model)
