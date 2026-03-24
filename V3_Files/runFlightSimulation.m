@@ -1,4 +1,4 @@
-function [h_max_m, f_drag_max_n, maxq_pa, altitude_m, velocity_ms, end_of_flight_event] = runFlightSimulation( ...
+function [h_max_m, f_drag_max_n, maxq_pa, altitude_m, velocity_ms, acceleration_ms2, t_s, end_of_flight_event] = runFlightSimulation( ...
     m_total_kg, m_final_kg, m_dot_total_kgs, d_vehicle_outer_m, P, C)
 %{
 ---------------------------------------------------------------------------
@@ -24,19 +24,19 @@ Outputs:
 ---------------------------------------------------------------------------
 %}
 
-t                = 0:0.01:120;             % [s]     Time interval and step to analyze
-altitude_m       = zeros(size(t));          % [m]     Pre-allocate altitude array
-velocity_ms      = zeros(size(t));          % [m/s]   Pre-allocate velocity array
-vehicle_mach     = zeros(size(t));          % [m/s]   Pre-allocate mach number array
-acceleration_ms2 = zeros(size(t));          % [m/s^2] Pre-allocate acceleration array
-f_drag_n         = zeros(size(t));          % [N]     Pre-allocate drag force array
-thrust_n         = zeros(size(t)); thrust_n(t<=P.t_burn_s) = P.f_thrust_n; % [N] Make thrust array (should be zero after burnout)
-m_total_sim_kg   = m_total_kg - m_dot_total_kgs .* t .* (thrust_n>0); m_total_sim_kg(t>P.t_burn_s) = m_final_kg; % [kg] Array of vehicle total mass over time
-dt_s             = t(2) - t(1);            % [s]     time step
+t_s                = 0:0.01:120;             % [s]     Time interval and step to analyze
+altitude_m       = zeros(size(t_s));          % [m]     Pre-allocate altitude array
+velocity_ms      = zeros(size(t_s));          % [m/s]   Pre-allocate velocity array
+vehicle_mach     = zeros(size(t_s));          % [m/s]   Pre-allocate mach number array
+acceleration_ms2 = zeros(size(t_s));          % [m/s^2] Pre-allocate acceleration array
+f_drag_n         = zeros(size(t_s));          % [N]     Pre-allocate drag force array
+thrust_n         = zeros(size(t_s)); thrust_n(t_s<=P.t_burn_s) = P.f_thrust_n; % [N] Make thrust array (should be zero after burnout)
+m_total_sim_kg   = m_total_kg - m_dot_total_kgs .* t_s .* (thrust_n>0); m_total_sim_kg(t_s>P.t_burn_s) = m_final_kg; % [kg] Array of vehicle total mass over time
+dt_s             = t_s(2) - t_s(1);            % [s]     time step
 area_cross_m2    = pi * (d_vehicle_outer_m/2)^2; % [m^2] Vehicle cross-sectional area
 
 % Step through time to calculate altitue, velocity, and acceleration using RK4
-for n = 2:max(size(t))
+for n = 2:max(size(t_s))
     % Current state
     y0 = altitude_m(n-1);
     v0 = velocity_ms(n-1);

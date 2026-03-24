@@ -20,16 +20,16 @@ Output:
 %}
 
 % --- 1.1 Engine & Performance ---
-P.f_thrust_n    = 650 * C.LBF_TO_N;    % [N]        Engine thrust (Updated)
-P.i_sp_s        = 291.29;              % [s]        Specific impulse (Derived from new Thrust and Mass Flow)
-P.t_burn_s      = 6.5;                   % [s]        Total burn time
+P.f_thrust_n    = 1200 * C.LBF_TO_N;    % [N]        Engine thrust (Updated)
+P.i_sp_s        = 245;              % [s]        Specific impulse (Derived from new Thrust and Mass Flow)
+P.t_burn_s      = 9;                   % [s]        Total burn time
 P.o_f_ratio     = 2.3;                 % [unitless] Oxidizer-to-Fuel mass ratio
 
 % --- 1.2 Propellants & Pressurant ---
 P.ox_density_kgm3             = 1141;          % [kg/m^3]  Density of Liquid Oxygen
 P.fuel_density_kgm3           = 820;           % [kg/m^3]  Density of Jet-A
 P.pressurant_molar_mass_kgmol = 0.0280134;     % [kg/mol]  Molar mass of Nitrogen (N2)
-P.residual_fraction           = 0.05;           % %%% TEMPORARY VALUE %%% [~] Percentage of fuel left over in tank after burnout
+P.residual_fraction           = 0.0;           % %%% TEMPORARY VALUE %%% [~] Percentage of fuel left over in tank after burnout
 
 P.p_op_ox_tank_pa         = 1000 * C.PSI_TO_PA;    % [Pa] Operating pressure of LOX tank
 P.p_op_fuel_tank_pa       = 1000 * C.PSI_TO_PA;    % [Pa] Operating pressure of Fuel tank
@@ -74,7 +74,7 @@ P.t_pressurant_prescribed_m = 0.337*2.54/100;  % [m] Pressurant tank wall thickn
 % Standard E-size at 2015 PSI has 7.1 mm wall thickness.  At 3000 PSI
 % the DOT formula gives ~8.0 mm.  Confirm with physical measurement.
 % See notes below for derivation.
-P.use_cots_tank = true;                      % [unitless] true - use COTS tank specs (ME36), false - calculate COPV
+P.use_cots_tank = false;                      % [unitless] true - use COTS tank specs (ME36), false - calculate COPV
 
 P.cots_tank_mass_kg           = 9.3 * C.LBM_TO_KG;    % [kg]  Empty mass of the ME36 tank (9.3 lbs from spec sheet, includes valve)
 P.cots_tank_volume_m3         = 0.0045;                % [m^3] Internal volume of the ME36 (4.5 L lowest estimate) TODO: Confirm with physical measurement
@@ -114,7 +114,7 @@ P.cots_tank_wall_mass_kg  = P.cots_tank_mass_kg - P.cots_tank_valve_mass_kg;    
 % Assumption: Both LOX and Fuel tanks are cylinders of the same diameter
 
 % Tank outer diameter is the primary input
-P.d_tank_outer_m    = 4.5 * C.IN_TO_M; % [m] Tank outer diameter
+P.d_tank_outer_m    = 6.675 * C.IN_TO_M; % [m] Tank outer diameter
 P.wall_thickness_m  = 0*2.54/100;      % [m] Vehicle airframe wall thickness
 P.inner_clearance_m = 0*2.54/100;      % [m] Clearance between tank and vehicle inner wall
 
@@ -207,5 +207,9 @@ rasaero_data = readtable("4in_RASAero_CD_data.CSV");                            
 P.rasaero_data_0_AoA = rasaero_data(rasaero_data.Alpha == 0,:); P.rasaero_data_0_AoA = P.rasaero_data_0_AoA(1:end-1,:);  % [~] Seperate out data for 0 degree angle of attack (also trim to be same size as 4 deg array)
 P.rasaero_data_2_AoA = rasaero_data(rasaero_data.Alpha == 2,:); P.rasaero_data_2_AoA = P.rasaero_data_2_AoA(1:end-1,:);  % [~] Seperate out data for 2 degree angle of attack (also trim to be same size as 4 deg array)
 P.rasaero_data_4_AoA = rasaero_data(rasaero_data.Alpha == 4,:);                                                            % [~] Seperate out data for 4 degree angle of attack
+
+% --- 2.0 Write Data to Excel Spreadsheet ---
+P.writedata = true;                 % [unitless] true - write outputs to excel spreadsheet, false - do not write outputs
+P.writefilename = 'Outputs.xlsx';   % [unitless] Name of excel file to write outputs to
 
 end
