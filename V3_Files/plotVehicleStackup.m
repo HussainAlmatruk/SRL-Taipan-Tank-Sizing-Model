@@ -1,4 +1,4 @@
-function plotVehicleStackup( ...
+function plotVehicleStackup( vehicle_name, ...
     d_ox_tank_m, l_cyl_ox_m, l_ox_tank_total_m, ...
     d_fuel_tank_m, l_cyl_fuel_m, l_fuel_tank_total_m, ...
     d_pressurant_tank_outer_m, l_cyl_pressurant_m, l_pressurant_tank_total_m, ...
@@ -40,7 +40,7 @@ z_bottom_pres_m = z_bottom_fuel_m + l_fuel_tank_total_m + gap_fuel_pres_m;
 z_max_m = z_bottom_pres_m + l_pressurant_tank_total_m;
 
 % --- 2.0 Initialize Figure ---
-figure('Name', 'Taipan Vehicle Tank Stackup', 'NumberTitle', 'off', 'Position', [150, 150, 1000, 800]);
+figure('Name', sprintf('%s Vehicle Tank Stackup', vehicle_name), 'NumberTitle', 'off', 'Position', [150, 150, 1000, 800]);
 
 % --- 3.0 Generate 2D Stackup Plot ---
 ax1 = subplot(1, 2, 1);
@@ -117,6 +117,12 @@ title(ax3, '3D Vehicle Stackup');
 camlight(ax3, 'headlight');
 lighting(ax3, 'gouraud');
 material(ax3, 'dull');
+
+% --- 5.0 Save Figure ---
+if ~exist('Saved_Plots', 'dir')
+    mkdir('Saved_Plots');
+end
+saveas(gcf, fullfile('Saved_Plots', sprintf('%s_Vehicle_Stackup.png', vehicle_name)));
 
 end
 

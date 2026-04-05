@@ -70,7 +70,7 @@ t_pressurant_total_m        = r_pressurant_outer_m - r_pressurant_internal_m;
 fprintf('\n');
 fprintf('=====================================================================\n');
 fprintf('  VAPOR - Volumetric Analysis & Pressurant Output Report\n');
-fprintf('  Taipan Vehicle Mass & Tank Design Results\n');
+fprintf('  %s Vehicle Mass & Tank Design Results\n', P.vehicle_name);
 fprintf('=====================================================================\n\n');
 
 % --- Mass Breakdown ---
@@ -245,7 +245,7 @@ figure('Name','VAPOR (Volumetric Analysis & Pressurant Output Report) - Pressura
 
 % --- Subplot 1: Pressurant Tank Pressure During Blowdown ---
 if ~isempty(p_pt_history_pa)
-    subplot(2,2,1);
+    subplot(2,3,1);
 
     % Convert to display units
     p_kPa = p_pt_history_pa / 1000;      % [kPa]
@@ -256,9 +256,9 @@ if ~isempty(p_pt_history_pa)
     plot(t_history_s, p_kPa, 'b-', 'LineWidth', lw);
     ylabel('Pressure [kPa]');
 
-    % Set left axis limits explicitly starting from a round number
+    % Set left axis limits explicitly starting from zero
     kPa_max = ceil(max(p_kPa) / 1000) * 1000;
-    kPa_min = floor(min(p_kPa) / 1000) * 1000;
+    kPa_min = 0;
     ylim([kPa_min, kPa_max]);
     left_lims = ylim;
 
@@ -291,7 +291,7 @@ if ~isempty(p_pt_history_pa)
 end
 
 % --- Subplot 2: Propellant Ullage Gas Temperatures ---
-subplot(2,2,2);
+subplot(2,3,2);
 yyaxis left
 plot(t_history_s, T_ox_history_K,   '-', 'LineWidth', lw, 'Color', [0.00 0.45 0.74]); hold on;
 plot(t_history_s, T_fuel_history_K, '-', 'LineWidth', lw, 'Color', [0.85 0.33 0.10]);
@@ -322,7 +322,7 @@ text(0.5, -0.18, annotation_str, 'Units', 'normalized', ...
 
 % --- Subplot 3: Pressurant Tank Gas & Wall Temperatures ---
 if ~isempty(T_pt_history_K)
-    subplot(2,2,3);
+    subplot(2,3,3);
     yyaxis left
     plot(t_history_s, T_pt_history_K,   '-',  'LineWidth', lw, 'Color', [0.85 0.33 0.10]); hold on;
     plot(t_history_s, T_wall_history_K, '--', 'LineWidth', lw, 'Color', [0.47 0.67 0.19]);
@@ -354,7 +354,7 @@ end
 
 % --- Subplot 4: N2 Mass Distribution ---
 if ~isempty(m_pt_history_kg)
-    subplot(2,2,4);
+    subplot(2,3,4);
 
     % Compute total N2 mass at each timestep for verification
     m_total_n2_history = m_pt_history_kg + m_ox_ullage_history_kg + m_fuel_ullage_history_kg; % [kg]
@@ -373,13 +373,84 @@ if ~isempty(m_pt_history_kg)
     % Print mass conservation summary to command window
     mass_error_max_kg = max(m_total_n2_history) - min(m_total_n2_history);
     fprintf('\n  [PLOT CHECK] Total N2 mass variation over burn: %.2e kg (should be ~0)\n', mass_error_max_kg);
+    
+    % Compute N2 flow rate out of the pressurant tank
+    N_steps_local = length(t_history_s) - 1;
+    dt_local_s = t_history_s(2) - t_history_s(1); % Assumed constant dt
+    mdot_out_kgs = zeros(1, N_steps_local + 1);
+    
+    % Use forward difference for the flow rate
+    mdot_out_kgs(1:N_steps_local) = (m_pt_history_kg(1:N_steps_local) - m_pt_history_kg(2:end)) / dt_local_s;
+    mdot_out_kgs(end) = mdot_out_kgs(end-1); % Match length to t_history_s
+    
+    mdot_ox_kgs = zeros(1, N_steps_local + 1);
+    mdot_ox_kgs(1:N_steps_local) = (m_ox_ullage_history_kg(2:end) - m_ox_ullage_history_kg(1:N_steps_local)) / dt_local_s;
+    mdot_ox_kgs(end) = mdot_ox_kgs(end-1);
+    
+    mdot_fuel_kgs = zeros(1, N_steps_local + 1);
+    mdot_fuel_kgs(1:N_steps_local) = (m_fuel_ullage_history_kg(2:end) - m_fuel_ullage_history_kg(1:N_steps_local)) / dt_local_s;
+    mdot_fuel_kgs(end) = mdot_fuel_kgs(end-1);
+    
+    % Standard conditions for Nitrogen (pulled from inputs)
+    T_std_local_K = P.standard_temperature_k; 
+    p_std_local_Pa = P.standard_pressure_pa;
+    R_s_n2_jkgk = C.r_universal_jmolk / P.pressurant_molar_mass_kgmol;
+    rho_std_n2_kgm3 = p_std_local_Pa / (R_s_n2_jkgk * T_std_local_K);
+    
+    % Convert to SCFM (1 m^3 = C.M_TO_FT^3 ft^3)
+    mdot_out_scfm = (mdot_out_kgs / rho_std_n2_kgm3) * (C.M_TO_FT^3) * 60;
+    mdot_ox_scfm = (mdot_ox_kgs / rho_std_n2_kgm3) * (C.M_TO_FT^3) * 60;
+    mdot_fuel_scfm = (mdot_fuel_kgs / rho_std_n2_kgm3) * (C.M_TO_FT^3) * 60;
+    
+    % --- Subplot 5: Nitrogen Tank Pressure vs N2 Flow in SCFM ---
+    if ~isempty(p_pt_history_pa)
+        subplot(2,3,5);
+        
+        p_PSI = p_pt_history_pa * C.PA_TO_PSI; % [PSI]
+        plot(mdot_out_scfm, p_PSI, '-', 'LineWidth', lw, 'Color', [0.47 0.67 0.19]); hold on;
+        plot(mdot_ox_scfm, p_PSI, '-', 'LineWidth', lw, 'Color', [0.00 0.45 0.74]); 
+        plot(mdot_fuel_scfm, p_PSI, '-', 'LineWidth', lw, 'Color', [0.85 0.33 0.10]);
+        
+        p_op_max_psi = max(P.p_op_ox_tank_pa, P.p_op_fuel_tank_pa) * C.PA_TO_PSI;
+        yline(p_op_max_psi, 'r--', sprintf('%.0f PSI (Op. Limit)', p_op_max_psi), ...
+            'LineWidth', lw, 'LabelHorizontalAlignment', 'left');
+            
+        ylabel('Pressurant Tank Pressure [PSI]');
+        xlabel('N_2 Flow Rate [SCFM]');
+        title('Tank Pressure vs N_2 Flow');
+        legend('Total Flow', 'Flow to LOX', 'Flow to Fuel', 'Location', 'best');
+        ylim([0, max(p_PSI) * 1.05]);
+        grid on;
+        ax = gca; ax.YAxis.Color = 'k'; ax.XAxis.Color = 'k';
+    end
+    
+    % --- Subplot 6: N2 Flow Rate vs Time ---
+    subplot(2,3,6);
+    
+    plot(t_history_s, mdot_out_scfm, '-', 'LineWidth', lw, 'Color', [0.47 0.67 0.19]); hold on;
+    plot(t_history_s, mdot_ox_scfm, '-', 'LineWidth', lw, 'Color', [0.00 0.45 0.74]);
+    plot(t_history_s, mdot_fuel_scfm, '-', 'LineWidth', lw, 'Color', [0.85 0.33 0.10]);
+    
+    ylabel('N_2 Flow Rate [SCFM]');
+    xlabel('Time [s]');
+    title('Nitrogen Flow Rate During Blowdown');
+    legend('Total Flow', 'Flow to LOX', 'Flow to Fuel', 'Location', 'best');
+    grid on;
+    ax = gca; ax.YAxis.Color = 'k'; ax.XAxis.Color = 'k';
+    
 end
 
 header_text = {
     '\bfVAPOR (Volumetric Analysis & Pressurant Output Report) — Pressurant System Thermal Analysis', ...
-    sprintf('\\rmVehicle: Taipan | Outer Diameter: %.2f in | Burn Time: %.1f s', P.d_tank_outer_m * C.M_TO_IN, P.t_burn_s), ...
+    sprintf('\\rmVehicle: %s | Outer Diameter: %.2f in | Burn Time: %.1f s', P.vehicle_name, P.d_tank_outer_m * C.M_TO_IN, P.t_burn_s), ...
     sprintf('Pressurant Tank: %s with volume %.2f L', tank_type, v_pressurant_tank_m3*1000)
 };
 sgtitle(header_text, 'FontSize', 12);
+
+    % --- Save Figure ---
+    if ~exist('Saved_Plots', 'dir')
+        mkdir('Saved_Plots');
+    end
+    saveas(gcf, fullfile('Saved_Plots', sprintf('%s_Pressurant_Thermal_Analysis.png', P.vehicle_name)));
 
 end

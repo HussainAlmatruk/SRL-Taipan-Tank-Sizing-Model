@@ -21,14 +21,18 @@ Last Updated: 03/12/2026
 % Clears workspace, command window, and closes all figures.
 clear; clc; close all;
 addpath('V3_Files');    % Add the V3_Files folder to the MATLAB search path so all functions can be found
+addpath('Vehicles');    % Add the Vehicles folder to the MATLAB search path so vehicle files can be found
 
 %% 1.0 - CONSTANTS & INPUTS
 % Constants and inputs are loaded from their dedicated functions.
 % To change a physical constant or unit conversion, edit getConstants.m.
-% To change a design input or parameter, edit getInputs.m.
+% To change a design input or parameter, edit the vehicle-specific file in V3_Files.
 
-C = getConstants();     % [struct] All physical constants and unit conversion factors
-P = getInputs(C);       % [struct] All vehicle and design input parameters
+% --- Select Vehicle Config ---
+vehicle_name = 'Taipan'; 
+
+C = getConstants();                   % [struct] All physical constants and unit conversion factors
+P = getInputs(vehicle_name, C);       % [struct] All vehicle and design input parameters
 
 %% 2.0 - CALCULATIONS
 % This section should not be modified unless equations are being updated or the initial code is done and is now being itirated on to optimize values
@@ -117,7 +121,7 @@ if P.writedata
 end
 
 % Plot the 2D and 3D visual stackup of the tanks
-plotVehicleStackup( ...
+plotVehicleStackup( vehicle_name, ...
     d_ox_tank_m, l_cyl_ox_m, l_ox_tank_total_m, ...
     d_fuel_tank_m, l_cyl_fuel_m, l_fuel_tank_total_m, ...
     d_pressurant_tank_outer_m, l_cyl_pressurant_m, l_pressurant_tank_total_m, ...
