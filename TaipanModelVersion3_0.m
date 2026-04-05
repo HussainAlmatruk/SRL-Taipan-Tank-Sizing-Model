@@ -29,7 +29,7 @@ addpath('Vehicles');    % Add the Vehicles folder to the MATLAB search path so v
 % To change a design input or parameter, edit the vehicle-specific file in V3_Files.
 
 % --- Select Vehicle Config ---
-vehicle_name = 'Taipan'; 
+vehicle_name = 'Scorpion'; 
 
 C = getConstants();                   % [struct] All physical constants and unit conversion factors
 P = getInputs(vehicle_name, C);       % [struct] All vehicle and design input parameters

@@ -34,6 +34,17 @@ Outputs:
 ---------------------------------------------------------------------------
 %}
 
+% --- 0.0 Setup Excel Template ---
+if ~exist('Outputs', 'dir')
+    mkdir('Outputs');
+end
+P.writefilename = fullfile('Outputs', sprintf('%s_Outputs.xlsx', P.vehicle_name));
+copyfile('Outputs.xlsx', P.writefilename, 'f');
+
+% --- Vehicle Configuration Title ---
+writecell({sprintf('Vehicle Configuration: %s', P.vehicle_name)}, P.writefilename, 'Sheet', 1, 'Range', 'D2');
+writecell({sprintf('Vehicle Configuration: %s', P.vehicle_name)}, P.writefilename, 'Sheet', 2, 'Range', 'C2');
+
 % --- Mass Summary ---
 writematrix([m_ox_kg;m_fuel_kg;m_pressurant_gas_kg;m_ox_kg + m_fuel_kg + m_pressurant_gas_kg;...
 m_empty_ox_tank_kg;m_empty_fuel_tank_kg;m_empty_pressurant_tank_kg;m_misc_and_plumbing_kg;...
@@ -63,5 +74,56 @@ runstring = strcat('Z3:Z',num2str(runlength+3));
 writematrix(velocity_ms',P.writefilename,'Sheet',2,'Range',runstring);
 runstring = strcat('AA3:AA',num2str(runlength+3));
 writematrix(altitude_m',P.writefilename,'Sheet',2,'Range',runstring);
+% --- 3.0 Post-Processing (COM Server Image Injection & Sheet Organization) ---
+try
+    % Full paths required for COM server
+    full_xlsx_path = fullfile(pwd, P.writefilename);
+    plot_thermal   = fullfile(pwd, 'Outputs', sprintf('%s_Pressurant_Thermal_Analysis.png', P.vehicle_name));
+    plot_stackup   = fullfile(pwd, 'Outputs', sprintf('%s_Vehicle_Stackup.png', P.vehicle_name));
+    
+    Excel = actxserver('Excel.Application');
+    Excel.DisplayAlerts = false;
+    Workbook = Excel.Workbooks.Open(full_xlsx_path);
+    
+    % Get existing sheets
+    Sheet1 = Workbook.Sheets.Item(1);
+    Sheet2 = Workbook.Sheets.Item(2);
+    
+    % Rename sheets clearly
+    Sheet1.Name = 'Mass and Structure Results';
+    Sheet2.Name = 'Flight Performance';
+    
+    % AutoFit text columns to prevent cutoff
+    Sheet1.Range('D:D').EntireColumn.AutoFit();
+    Sheet2.Range('C:C').EntireColumn.AutoFit();
+    Sheet2.Range('B:B').EntireColumn.AutoFit();
+    
+    % Create a new dedicated sheet for Plots at the end of the workbook
+    LastSheet = Workbook.Sheets.Item(Workbook.Sheets.Count);
+    PlotSheet = Workbook.Sheets.Add([], LastSheet);
+    PlotSheet.Name = 'Plots';
+    
+    % Insert shapes into the isolated Plot sheet (stacked vertically)
+    PlotSheet.Shapes.AddPicture(plot_thermal, 0, 1, 10, 10, 650, 400);
+    PlotSheet.Shapes.AddPicture(plot_stackup, 0, 1, 10, 430, 650, 450);
+    
+    % Reorder sheets to: Flight Performance, Mass and Structure, Plots
+    Sheet2.Move(Sheet1);
+    
+    % Select Flight Performance so it opens first natively
+    Sheet2.Activate();
+    
+    Workbook.Save();
+    Workbook.Close();
+    Excel.Quit();
+    delete(Excel);
+    disp('Successfully grouped and formatted the Excel Output.');
+catch ME
+    disp('Note: Could not finalize Excel via COM (Excel may not be installed or file is locked).');
+    if exist('Excel', 'var') && isprop(Excel, 'Quit')
+        Excel.Quit();
+        delete(Excel);
+    end
+end
 
 end

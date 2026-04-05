@@ -448,9 +448,9 @@ header_text = {
 sgtitle(header_text, 'FontSize', 12);
 
     % --- Save Figure ---
-    if ~exist('Saved_Plots', 'dir')
-        mkdir('Saved_Plots');
+    if ~exist('Outputs', 'dir')
+        mkdir('Outputs');
     end
-    saveas(gcf, fullfile('Saved_Plots', sprintf('%s_Pressurant_Thermal_Analysis.png', P.vehicle_name)));
+    saveas(gcf, fullfile('Outputs', sprintf('%s_Pressurant_Thermal_Analysis.png', P.vehicle_name)));
 
 end

@@ -119,10 +119,10 @@ lighting(ax3, 'gouraud');
 material(ax3, 'dull');
 
 % --- 5.0 Save Figure ---
-if ~exist('Saved_Plots', 'dir')
-    mkdir('Saved_Plots');
+if ~exist('Outputs', 'dir')
+    mkdir('Outputs');
 end
-saveas(gcf, fullfile('Saved_Plots', sprintf('%s_Vehicle_Stackup.png', vehicle_name)));
+saveas(gcf, fullfile('Outputs', sprintf('%s_Vehicle_Stackup.png', vehicle_name)));
 
 end
 
