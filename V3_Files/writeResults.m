@@ -39,7 +39,7 @@ if ~exist('Outputs', 'dir')
     mkdir('Outputs');
 end
 P.writefilename = fullfile('Outputs', sprintf('%s_Outputs.xlsx', P.vehicle_name));
-copyfile('Outputs.xlsx', P.writefilename, 'f');
+copyfile(fullfile('Archive', 'Outputs.xlsx'), P.writefilename, 'f');
 
 % --- Vehicle Configuration Title ---
 writecell({sprintf('Vehicle Configuration: %s', P.vehicle_name)}, P.writefilename, 'Sheet', 1, 'Range', 'D2');
@@ -55,7 +55,7 @@ m_empty_pressurant_tank_kg;m_total_kg],P.writefilename,'Sheet',1,'Range','D5:D17
 writematrix([d_ox_tank_m;d_ox_tank_m-2*t_cyl_ox_m;t_cyl_ox_m;l_ox_tank_total_m],P.writefilename,'Sheet',1,'Range','H5:H8');
 
 % --- Fuel Tank Summary ---
-writematrix([d_fuel_tank_m;d_fuel_tank_m-2*t_cyl_ox_m;t_cyl_fuel_m;l_fuel_tank_total_m],P.writefilename,'Sheet',1,'Range','H12:H15');
+writematrix([d_fuel_tank_m;d_fuel_tank_m-2*t_cyl_fuel_m;t_cyl_fuel_m;l_fuel_tank_total_m],P.writefilename,'Sheet',1,'Range','H12:H15');
 
 % --- Pressurant Tank Summary ---
 writematrix([d_pressurant_tank_outer_m;2*r_pressurant_internal_m;t_pressurant_tank_m;l_pressurant_tank_total_m],P.writefilename,'Sheet',1,'Range','H19:H22');

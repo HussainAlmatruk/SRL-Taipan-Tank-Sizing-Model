@@ -123,7 +123,12 @@ fprintf('Resulting COPV Length:     %8.2f m (%.2f in)\n', opt_length_m, opt_leng
 fprintf('====================================================\n');
 
 % Plotting
-figure('Name', 'Pressurant Tank MEOP Trade Study', 'Position', [100, 100, 800, 400]);
+fig = figure('Name', 'Pressurant Tank MEOP Trade Study', 'Position', [100, 100, 800, 400]);
+try
+    fig.Theme = 'light';
+catch
+    set(fig, 'Color', 'w');
+end
 
 % Subplot 1: Mass vs Pressure
 subplot(1,2,1);

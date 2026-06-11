@@ -391,7 +391,7 @@ end
 
 % Simplified total vehicle length (tanks stacked end-to-end)
 % NOTE: A real stackup would include engine, avionics, recovery bay, etc.
-l_total_vehicle_m = l_ox_tank_total_m + l_fuel_tank_total_m + l_pressurant_tank_total_m; % [m]
+l_total_vehicle_m = l_ox_tank_total_m + l_fuel_tank_total_m + l_pressurant_tank_total_m + P.gap_lox_fuel_m + P.gap_fuel_pres_m; % [m]
 
 %% --- 5. VEHICLE MASS BUILDUP & STATIC PERFORMANCE ---
 

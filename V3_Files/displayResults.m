@@ -70,6 +70,32 @@ t_pressurant_total_m        = r_pressurant_outer_m - r_pressurant_internal_m;
 fprintf('\n');
 fprintf('=====================================================================\n');
 fprintf('  VAPOR - Volumetric Analysis & Pressurant Output Report\n');
+fprintf('  Run Header & Design Assumptions\n');
+fprintf('=====================================================================\n');
+fprintf('  Vehicle Config:        %s\n', P.vehicle_name);
+if isfield(P, 'stack_order')
+    fprintf('  Tank Stack Order:      %s\n', P.stack_order);
+else
+    fprintf('  Tank Stack Order:      LOX_BOTTOM_BASELINE (default)\n');
+end
+fprintf('  Tank Outer Diameter:   %.4f m (%.3f in)\n', P.d_tank_outer_m, P.d_tank_outer_m * C.M_TO_IN);
+if strcmp(P.vehicle_name, 'Scorpion')
+    fprintf('                         (Note: 6.675 in actual OD for 6 in nominal tank size)\n');
+end
+if P.use_cots_tank
+    if isfield(P, 'pressurant_tank_name')
+        fprintf('  COTS Pressurant Tank:  %s\n', P.pressurant_tank_name);
+    else
+        fprintf('  COTS Pressurant Tank:  ME36 (default)\n');
+    end
+else
+    fprintf('  COTS Pressurant Tank:  None (Custom COPV calculated)\n');
+end
+fprintf('  LOX Ullage Fraction:   %.2f%%\n', P.ullage_fraction_ox * 100);
+fprintf('  Fuel Ullage Fraction:  %.2f%%\n', P.ullage_fraction_fuel * 100);
+fprintf('=====================================================================\n\n');
+
+fprintf('=====================================================================\n');
 fprintf('  %s Vehicle Mass & Tank Design Results\n', P.vehicle_name);
 fprintf('=====================================================================\n\n');
 
@@ -160,9 +186,21 @@ if ~isempty(p_pt_history_pa)
     end
 end
 
-fprintf('  >>> ACTIVE MODEL: %s <<<\n', active_label);
-fprintf('  Total N2 Mass Required (Loaded): %8.4f kg\n', m_pressurant_gas_thermal_kg);
-fprintf('  Exact Required Tank Volume:      %8.2f L   (%.4f m^3)\n', v_storage_thermal_L, v_storage_thermal_L/1000);
+if P.use_cots_tank
+    cots_vol_L = P.cots_tank_volume_m3 * 1000;
+    tank_name = 'ME36';
+    if isfield(P, 'pressurant_tank_name')
+        tank_name = P.pressurant_tank_name;
+    end
+    fprintf('  >>> ACTIVE MODEL (COTS): %s <<<\n', active_label);
+    fprintf('  Selected COTS Tank:              %s\n', tank_name);
+    fprintf('  Selected COTS Tank Volume:       %8.2f L   (%.4f m^3)\n', cots_vol_L, P.cots_tank_volume_m3);
+    fprintf('  Loaded N2 Mass in Selected Tank: %8.4f kg\n', m_pressurant_gas_thermal_kg);
+else
+    fprintf('  >>> ACTIVE MODEL (COPV): %s <<<\n', active_label);
+    fprintf('  Total N2 Mass Required (Loaded): %8.4f kg\n', m_pressurant_gas_thermal_kg);
+    fprintf('  Exact Required Tank Volume:      %8.2f L   (%.4f m^3)\n', v_storage_thermal_L, v_storage_thermal_L/1000);
+end
 
 % Print the time to minimum pressure if the pressure data exists
 if ~isnan(time_to_1000_s)
@@ -173,18 +211,7 @@ else
         fprintf('  PT stays above operating pressure for entire burn.\n');
     end
 end
-
-if P.use_cots_tank
-    cots_vol_L = P.cots_tank_volume_m3 * 1000;
-    margin_L   = cots_vol_L - v_storage_thermal_L;
-    if margin_L >= 0
-        fprintf('  ME36 Tank Volume:              %8.2f L   --  FITS  (%.2f L margin)\n\n', cots_vol_L, margin_L);
-    else
-        fprintf('  ME36 Tank Volume:              %8.2f L   --  DOES NOT FIT  (%.2f L short)\n\n', cots_vol_L, -margin_L);
-    end
-else
-    fprintf('\n');
-end
+fprintf('\n');
 
 % --- Comparison Table ---
 fprintf('  --- Model Comparison (for reference) ---\n');
@@ -230,7 +257,11 @@ lw = 1.5;  % Default line width for all plots
 
 % --- 1. Identify Key Configuration Data for Header ---
 if P.use_cots_tank
-    tank_type = 'COTS (ME36)';
+    tank_name = 'ME36';
+    if isfield(P, 'pressurant_tank_name')
+        tank_name = P.pressurant_tank_name;
+    end
+    tank_type = ['COTS (' tank_name ')'];
 else
     tank_type = 'Custom COPV';
 end
@@ -240,8 +271,13 @@ p_op_limit_pa = max(P.p_op_ox_tank_pa, P.p_op_fuel_tank_pa);
 idx_limit = find(p_pt_history_pa < p_op_limit_pa, 1);
 if isempty(idx_limit); idx_limit = length(t_history_s); end
 
-figure('Name','VAPOR (Volumetric Analysis & Pressurant Output Report) - Pressurant System Thermal Analysis','NumberTitle','off', ...
+fig = figure('Name','VAPOR (Volumetric Analysis & Pressurant Output Report) - Pressurant System Thermal Analysis','NumberTitle','off', ...
        'Position',[100 100 1600 1000]);
+try
+    fig.Theme = 'light';
+catch
+    set(fig, 'Color', 'w');
+end
 
 % --- Subplot 1: Pressurant Tank Pressure During Blowdown ---
 if ~isempty(p_pt_history_pa)

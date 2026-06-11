@@ -1,7 +1,7 @@
 function P = Scorpion(C)
 %{
 ---------------------------------------------------------------------------
-Taipan
+Scorpion
   Returns a struct containing all vehicle design inputs and parameters.
   This is the PRIMARY FILE TO EDIT when running trade studies or updating
   design values. Physical constants and unit conversions are not defined
@@ -75,6 +75,7 @@ P.t_pressurant_prescribed_m = 0.337*2.54/100;  % [m] Pressurant tank wall thickn
 % Wall thickness and inner diameter are ESTIMATED as this is a carbon fiber
 % wrapped vessel over an aluminum liner (DOT-SP-10915).
 P.use_cots_tank = true;                      % [unitless] true - use COTS tank specs, false - calculate COPV
+P.pressurant_tank_name = 'SCOTT 45 Min';     % Name of selected COTS pressurant tank
 
 P.cots_tank_mass_kg           = 14.99 * C.LBM_TO_KG;    % [kg]  Empty mass of the SCOTT tank (14.99 lbs from spec sheet)
 P.cots_tank_volume_m3         = 6.8 / 1000;            % [m^3] Internal water volume (6.8 L / 418 in^3)
@@ -115,9 +116,10 @@ P.d_tank_outer_m    = 6.675 * C.IN_TO_M; % [m] Tank outer diameter
 P.wall_thickness_m  = 0*2.54/100;      % [m] Vehicle airframe wall thickness
 P.inner_clearance_m = 0*2.54/100;      % [m] Clearance between tank and vehicle inner wall
 
-% --- Tank Stackup Spacing ---
+% --- Tank Stackup Spacing & Order ---
 P.gap_lox_fuel_m  = 0.15;  % [m] Distance between the LOX tank and Fuel tank
 P.gap_fuel_pres_m = 0.15;  % [m] Distance between the Fuel tank and Pressurant tank
+P.stack_order     = 'LOX_BOTTOM_BASELINE'; % Order of tanks from bottom to top
 
 % Material Properties for LOX Tank
 P.material_density_ox_kgm3        = 2700;   % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value

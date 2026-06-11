@@ -20,6 +20,14 @@ Last Updated: 03/12/2026
 %% 0.0 - SETUP
 % Clears workspace, command window, and closes all figures.
 clear; clc; close all;
+try
+    % Enforce light theme globally if supported
+    set(groot, 'defaultFigureTheme', 'light');
+catch
+    % Fallback for older MATLAB versions
+    set(groot, 'defaultFigureColor', 'w');
+    set(groot, 'defaultAxesColor', 'w');
+end
 addpath('V3_Files');    % Add the V3_Files folder to the MATLAB search path so all functions can be found
 addpath('Vehicles');    % Add the Vehicles folder to the MATLAB search path so vehicle files can be found
 

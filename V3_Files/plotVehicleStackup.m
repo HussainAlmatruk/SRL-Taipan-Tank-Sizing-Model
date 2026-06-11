@@ -40,7 +40,12 @@ z_bottom_pres_m = z_bottom_fuel_m + l_fuel_tank_total_m + gap_fuel_pres_m;
 z_max_m = z_bottom_pres_m + l_pressurant_tank_total_m;
 
 % --- 2.0 Initialize Figure ---
-figure('Name', sprintf('%s Vehicle Tank Stackup', vehicle_name), 'NumberTitle', 'off', 'Position', [150, 150, 1000, 800]);
+fig = figure('Name', sprintf('%s Vehicle Tank Stackup', vehicle_name), 'NumberTitle', 'off', 'Position', [150, 150, 1000, 800]);
+try
+    fig.Theme = 'light';
+catch
+    set(fig, 'Color', 'w');
+end
 
 % --- 3.0 Generate 2D Stackup Plot ---
 ax1 = subplot(1, 2, 1);

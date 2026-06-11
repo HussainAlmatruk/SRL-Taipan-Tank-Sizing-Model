@@ -79,6 +79,7 @@ P.t_pressurant_prescribed_m = 0.337*2.54/100;  % [m] Pressurant tank wall thickn
 % the DOT formula gives ~8.0 mm.  Confirm with physical measurement.
 % See notes below for derivation.
 P.use_cots_tank = true;                      % [unitless] true - use COTS tank specs (ME36), false - calculate COPV
+P.pressurant_tank_name = 'ME36';             % Name of selected COTS pressurant tank
 
 P.cots_tank_mass_kg           = 9.3 * C.LBM_TO_KG;    % [kg]  Empty mass of the ME36 tank (9.3 lbs from spec sheet, includes valve)
 P.cots_tank_volume_m3         = 0.0045;                % [m^3] Internal volume of the ME36 (4.5 L lowest estimate) TODO: Confirm with physical measurement
@@ -122,9 +123,10 @@ P.d_tank_outer_m    = 4.5 * C.IN_TO_M; % [m] Tank outer diameter
 P.wall_thickness_m  = 0;      % [m] Vehicle airframe wall thickness
 P.inner_clearance_m = 0;      % [m] Clearance between tank and vehicle inner wall
 
-% --- Tank Stackup Spacing ---
+% --- Tank Stackup Spacing & Order ---
 P.gap_lox_fuel_m  = 0.15;  % [m] Distance between the LOX tank and Fuel tank
 P.gap_fuel_pres_m = 0.15;  % [m] Distance between the Fuel tank and Pressurant tank
+P.stack_order     = 'LOX_BOTTOM_BASELINE'; % Order of tanks from bottom to top
 
 % Material Properties for LOX Tank
 P.material_density_ox_kgm3        = 2700;   % %%% TEMPORARY VALUE %%%  [kg/m^3] TODO: Define this value
